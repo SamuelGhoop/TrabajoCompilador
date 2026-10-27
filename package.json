@@ -1,0 +1,27 @@
+{
+  "name": "trabajocompilador",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "check": "tsc",
+    "start": "tsx src/main.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamuelGhoop/Compilador.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SamuelGhoop/Compilador/issues"
+  },
+  "homepage": "https://github.com/SamuelGhoop/Compilador#readme",
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
