@@ -33,6 +33,11 @@ for while
 10 <= 10;
 10 >= 9;
 2 ** 3;
+10 % 3;
+"foobar"
+"foo bar"
+[1, 2];
+{"foo": "bar"}
 `;
 
   const tests: [token.TokenType, string][] = [
@@ -126,6 +131,23 @@ for while
     [token.POW, "**"],
     [token.INT, "3"],
     [token.SEMICOLON, ";"],
+    [token.INT, "10"],
+    [token.MOD, "%"],
+    [token.INT, "3"],
+    [token.SEMICOLON, ";"],
+    [token.STRING, "foobar"],
+    [token.STRING, "foo bar"],
+    [token.LBRACKET, "["],
+    [token.INT, "1"],
+    [token.COMMA, ","],
+    [token.INT, "2"],
+    [token.RBRACKET, "]"],
+    [token.SEMICOLON, ";"],
+    [token.LBRACE, "{"],
+    [token.STRING, "foo"],
+    [token.COLON, ":"],
+    [token.STRING, "bar"],
+    [token.RBRACE, "}"],
     [token.EOF, ""],
   ];
 
@@ -140,4 +162,18 @@ for while
     assert.equal(tok.literal, expectedLiteral,
       `tests[${i}] - literal wrong. expected="${expectedLiteral}", got="${tok.literal}"`);
   });
+});
+
+test("TestUnterminatedString", () => {
+  const l = new Lexer('let s = "hola');
+  const types = [l.nextToken(), l.nextToken(), l.nextToken(), l.nextToken(), l.nextToken()];
+
+  assert.deepEqual(types[3], { type: token.ILLEGAL, literal: '"hola' });
+  assert.equal(types[4].type, token.EOF);
+});
+
+test("TestIllegalChar", () => {
+  const l = new Lexer("@");
+  assert.deepEqual(l.nextToken(), { type: token.ILLEGAL, literal: "@" });
+  assert.equal(l.nextToken().type, token.EOF);
 });
