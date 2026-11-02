@@ -4,7 +4,7 @@ import { kyra } from "./kyra";
 import { start } from "./repl/repl";
 
 // Ancho interior del recuadro de bienvenida (sin los bordes).
-const ANCHO = 52;
+const ANCHO = 56;
 
 // Los colores solo se usan en una terminal real (y si NO_COLOR no está
 // definido), para no ensuciar la salida cuando se redirige a un archivo.
