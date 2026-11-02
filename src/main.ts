@@ -3,9 +3,8 @@ import * as os from "node:os";
 import { kyra } from "./kyra";
 import { start } from "./repl/repl";
 
-// Ancho interior del recuadro de bienvenida (sin los bordes): el retrato
-// de Kyra mide 64 columnas y se le deja un margen de 2 a cada lado.
-const ANCHO = 68;
+// Ancho interior del recuadro de bienvenida (sin los bordes).
+const ANCHO = 52;
 
 // Los colores solo se usan en una terminal real (y si NO_COLOR no está
 // definido), para no ensuciar la salida cuando se redirige a un archivo.
@@ -28,8 +27,10 @@ const username = os.userInfo().username;
 
 console.log(borde("╔" + "═".repeat(ANCHO) + "╗"));
 console.log(linea());
+// El dibujo se centra como un bloque (no línea por línea) para que no se deforme.
+const anchoKyra = Math.max(...kyra.map((l) => l.length));
 for (const l of kyra) {
-	console.log(linea(l));
+	console.log(linea(l.padEnd(anchoKyra)));
 }
 console.log(linea());
 console.log(linea("K Y R A   C O M P I L E R", titulo));
