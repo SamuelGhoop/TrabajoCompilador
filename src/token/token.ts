@@ -1,78 +1,101 @@
+// Módulo token define los TOKENS del lenguaje: las unidades mínimas con
+// significado (como las "palabras" de una oración).
+//
+// Es el vocabulario compartido entre las fases del compilador:
+//
+//	código fuente ──lexer──▶ tokens ──parser──▶ AST
+//
+// Por ejemplo, el código  let x = 5;  produce estos tokens:
+//
+//	{LET let} {IDENT x} {= =} {INT 5} {; ;}
+
+// TokenType es el TIPO de un token (qué clase de palabra es).
+// Se usa string para que sea fácil de imprimir y depurar: al mostrar un
+// token se ve "IDENT" o "+" en lugar de un número.
 export type TokenType = string;
 
-export interface Token{
-	type:    TokenType;
-	literal: string;
+// Token es la unidad mínima que genera el lexer.
+export interface Token {
+	type: TokenType; // qué clase de token es (IDENT, INT, PLUS, ...)
+	literal: string; // texto exacto que se leyó del código ("x", "5", "+")
 }
 
-export const ILLEGAL = "ILLEGAL";
-export const EOF = "EOF";
+// Tokens especiales
+export const ILLEGAL = "ILLEGAL"; // carácter que el lexer no reconoce
+export const EOF = "EOF";         // fin de la entrada
 
-	// Identifiers + literals
-	export const IDENT = "IDENT" // add, foobar, x, y, ...
-	export const INT   = "INT"   // 1343456
+// Identificadores y literales
+export const IDENT = "IDENT";   // add, foobar, x, y, ...
+export const INT = "INT";       // 1343456
+export const STRING = "STRING"; // "foobar"
 
-	// Operators
-	export const ASSIGN   = "="
-	export const PLUS     = "+"
-	export const MINUS    = "-"
-	export const BANG     = "!"
-	export const ASTERISK = "*"
-	export const SLASH    = "/"
+// Operadores
+export const ASSIGN = "=";
+export const PLUS = "+";
+export const MINUS = "-";
+export const BANG = "!";
+export const ASTERISK = "*";
+export const SLASH = "/";
+export const POW = "**"; // potencia
+export const MOD = "%";  // módulo
 
-	export const LT = "<"
-	export const GT = ">"
-	export const LTE = "<="
-	export const GTE = ">="
+// Operadores de comparación
+export const LT = "<";
+export const GT = ">";
+export const EQ = "==";
+export const NOT_EQ = "!=";
+export const LTE = "<=";
+export const GTE = ">=";
 
-	export const EQ     = "=="
-	export const NOT_EQ = "!="
-	
-	export const POW    = "**"
+// Delimitadores
+export const COMMA = ",";
+export const SEMICOLON = ";";
+export const COLON = ":"; // separa clave y valor en los hashes {"a": 1}
 
-	// Delimiters
-	export const COMMA     = ","
-	export const SEMICOLON = ";"
+export const LPAREN = "(";
+export const RPAREN = ")";
+export const LBRACE = "{";
+export const RBRACE = "}";
+export const LBRACKET = "[";
+export const RBRACKET = "]";
 
-	export const LPAREN = "("
-	export const RPAREN = ")"
-	export const LBRACE = "{"
-	export const RBRACE = "}"
-	export const LBRACKET = "["
-	export const RBRACKET = "]"
+// Palabras reservadas
+export const FUNCTION = "FUNCTION";
+export const LET = "LET";
+export const TRUE = "TRUE";
+export const FALSE = "FALSE";
+export const IF = "IF";
+export const ELSE = "ELSE";
+export const RETURN = "RETURN";
+export const ELIF = "ELIF";
+export const FOR = "FOR";
+export const WHILE = "WHILE";
+export const BREAK = "BREAK";
 
-	// Keywords
-	export const FUNCTION = "FUNCTION"
-	export const LET      = "LET"
-	export const TRUE     = "TRUE"
-	export const FALSE    = "FALSE"
-	export const IF       = "IF"
-	export const ELSE     = "ELSE"
-	export const ELIF     = "ELIF"
-	export const RETURN   = "RETURN"
-	export const FOR      = "FOR"
-	export const WHILE    = "WHILE"
-	export const BREAK    = "BREAK"
-
-
-const keywords = new Map<string,TokenType>([
+// keywords relaciona cada palabra reservada del lenguaje con su tipo de token.
+// Las palabras reservadas se escriben igual que un identificador (solo
+// letras), por eso el lexer primero lee la palabra completa y luego la busca
+// en este mapa para saber si es reservada. Para agregar una palabra
+// reservada nueva basta con definir su constante arriba y añadirla aquí.
+const keywords = new Map<string, TokenType>([
 	["function", FUNCTION],
-	["let",      LET],
-	["true",     TRUE],
-	["false",    FALSE],
-	["if",       IF],
-	["else",     ELSE],
-	["elif",   ELIF],
-	["return",   RETURN],
-	["for",    FOR],
-	["while",    WHILE],
-	["break",    BREAK],
+	["let", LET],
+	["true", TRUE],
+	["false", FALSE],
+	["for", FOR],
+	["while", WHILE],
+	["if", IF],
+	["else", ELSE],
+	["elif", ELIF],
+	["return", RETURN],
+	["break", BREAK],
 ]);
 
+// lookupIdent revisa si un identificador es una palabra reservada.
+// Si lo es devuelve su tipo de token; si no, devuelve IDENT.
+//
+//	lookupIdent("let")  → LET
+//	lookupIdent("edad") → IDENT
 export function lookupIdent(ident: string): TokenType {
-    const tok= keywords.get(ident)
-	if(tok)  {
-		return tok
-	}
-	return IDENT
+	return keywords.get(ident) ?? IDENT;
 }
