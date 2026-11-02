@@ -1,6 +1,6 @@
-# Compilador (CatCompiler en TypeScript)
+# KyraCompiler
 
-Port a TypeScript de [CatCompiler](https://github.com/sebastianzapatar/compi8am), un proyecto educativo para analizar un lenguaje pequeño. Incluye un analizador léxico (*lexer*), un analizador sintáctico (*parser*) y un REPL que permite ver los tokens o el árbol de sintaxis abstracta (AST) de una línea de código. Por ahora no evalúa ni ejecuta las expresiones.
+Port a TypeScript de [compi8am](https://github.com/sebastianzapatar/compi8am), un proyecto educativo para analizar un lenguaje pequeño. Incluye un analizador léxico (*lexer*), un analizador sintáctico (*parser*) y un REPL que permite ver los tokens o el árbol de sintaxis abstracta (AST) de una línea de código. Por ahora no evalúa ni ejecuta las expresiones.
 
 ## Requisitos
 
