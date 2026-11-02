@@ -66,7 +66,7 @@ export class Integer implements Hashable {
 }
 
 // BooleanObj es true o false. Solo existen dos instancias (TRUE y FALSE,
-// en evaluator.ts) para poder compararlas con ===.
+// al final de este archivo) para poder compararlas con ===.
 export class BooleanObj implements Hashable {
 	constructor(public value: boolean) {}
 
@@ -99,7 +99,7 @@ export class StringObj implements Hashable {
 
 // Null representa la ausencia de valor: lo que da un if sin else cuya
 // condición es falsa, un índice fuera del arreglo, un ciclo, etc.
-// Solo existe una instancia (NULL, en evaluator.ts).
+// Solo existe una instancia (NULL, al final de este archivo).
 export class Null implements Obj {
 	type(): ObjectType {
 		return NULL_OBJ;
@@ -217,4 +217,19 @@ export class HashObj implements Obj {
 		const pairs = [...this.pairs.values()].map((p) => `${p.key.inspect()}: ${p.value.inspect()}`);
 		return `{${pairs.join(", ")}}`;
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Instancias únicas
+// Como true, false y null siempre son iguales, se crean una sola vez y se
+// reutilizan; así se pueden comparar directamente con ===.
+// ---------------------------------------------------------------------------
+
+export const NULL = new Null();
+export const TRUE = new BooleanObj(true);
+export const FALSE = new BooleanObj(false);
+
+// nativeBoolToBooleanObject convierte un boolean de TypeScript en TRUE o FALSE.
+export function nativeBoolToBooleanObject(value: boolean): BooleanObj {
+	return value ? TRUE : FALSE;
 }
