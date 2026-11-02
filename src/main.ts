@@ -2,25 +2,45 @@
 import * as os from "node:os";
 import { start } from "./repl/repl";
 
-// Ancho interior del recuadro de bienvenida (sin los "**" de los bordes).
-const ANCHO = 40;
+// Ancho interior del recuadro de bienvenida (sin los bordes).
+const ANCHO = 46;
 
-// Kyra, la mascota del compilador: una boston terrier.
+// Kyra, la mascota del compilador: una boston terrier, con sus orejas de
+// murciélago, sus ojos grandes y la franja blanca en medio de la cara.
 const kyra = String.raw`
-  /\_         _/\
- /   '-.___.-'   \
-|  /  _  |  _  \  |
- \ | (o) | (o) | /
-  \|     |     |/
-   \   (___)   /
-    '-. \_/ .-'
-       '---'
+     _                         _
+    / \                       / \
+   / . \                     / . \
+  / / \ \___.-----------.___/ / \ \
+ | |   \                     /   | |
+  \ \   '.       | |       .'   / /
+   \ '.   \      | |      /   .' /
+    '. \___\     | |     /___/ .'
+      |   ____   | |   ____   |
+      |  /  o \  | |  / o  \  |
+      |  \____/ /   \ \____/  |
+       \       /     \       /
+        \     | (___) |     /
+         '.    \ \_/ /    .'
+           '-.  '---'  .-'
+              '-------'
 `.slice(1, -1).split("\n");
 
-// linea encierra un texto entre los bordes del recuadro, centrado.
-function linea(texto = ""): string {
+// Los colores solo se usan en una terminal real (y si NO_COLOR no está
+// definido), para no ensuciar la salida cuando se redirige a un archivo.
+const conColor = process.stdout.isTTY === true && process.env.NO_COLOR === undefined;
+const estilo = (codigo: string) => (texto: string) => (conColor ? `\x1b[${codigo}m${texto}\x1b[0m` : texto);
+const borde = estilo("36");      // cian
+const perro = estilo("1;37");    // blanco brillante
+const titulo = estilo("1;33");   // amarillo brillante
+const tenue = estilo("2");       // atenuado
+
+// linea centra un texto dentro del recuadro. Primero se rellena con espacios
+// y después se colorea, para que los códigos de color no cuenten en el ancho.
+function linea(texto = "", pintar: (t: string) => string = (t) => t): string {
 	const izquierda = Math.floor((ANCHO - texto.length) / 2);
-	return "**" + " ".repeat(izquierda) + texto.padEnd(ANCHO - izquierda) + "**";
+	const relleno = " ".repeat(izquierda) + texto + " ".repeat(ANCHO - izquierda - texto.length);
+	return borde("║") + pintar(relleno) + borde("║");
 }
 
 // El dibujo se centra como un bloque (no línea por línea) para que no se deforme.
@@ -29,18 +49,18 @@ const anchoKyra = Math.max(...kyra.map((l) => l.length));
 // Se obtiene el usuario del sistema para saludarlo por su nombre.
 const username = os.userInfo().username;
 
-console.log("*".repeat(ANCHO + 4));
-console.log(linea());
-console.log(linea("-- BIENVENIDO A KYRACOMPILER REPL --"));
+console.log(borde("╔" + "═".repeat(ANCHO) + "╗"));
 console.log(linea());
 for (const l of kyra) {
-	console.log(linea(l.padEnd(anchoKyra)));
+	console.log(linea(l.padEnd(anchoKyra), perro));
 }
 console.log(linea());
+console.log(linea("K Y R A   C O M P I L E R", titulo));
+console.log(linea("─".repeat(30), borde));
 console.log(linea("¡Guau! Soy Kyra, tu asistente canina."));
-console.log(linea("¡Dame esos tokens!"));
+console.log(linea("¡Dame esos tokens!", tenue));
 console.log(linea());
-console.log("*".repeat(ANCHO + 4) + "\n");
+console.log(borde("╚" + "═".repeat(ANCHO) + "╝") + "\n");
 console.log(`¡Hola ${username}! Estás en KyraCompiler.`);
 console.log("Escribe algún comando y deja que la magia ocurra...");
 
