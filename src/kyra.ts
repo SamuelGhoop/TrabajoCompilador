@@ -1,25 +1,41 @@
-// Kyra, la mascota del compilador: una boston terrier dibujada con líneas
-// sobre su foto (orejas de murciélago, la franja blanca entre los ojos que
-// baja hasta el hocico, y la nariz chata).
+// Kyra, la mascota del compilador: retrato de la boston terrier en pixel art.
+// Cada carácter junta dos píxeles (arriba y abajo) con los bloques ▀ ▄ █,
+// porque en la terminal un carácter es el doble de alto que de ancho; así
+// el dibujo no sale estirado.
 // Se exporta como lista de líneas para que main.ts la enmarque.
-export const kyra = String.raw`
-   __                                      __
-  /  \                                    /  \
- /    \                                  /    \
-|  /\  \                                /  /\  |
-|  \ \  \______________________________/  / /  |
- \  \ \             |      |             / /  /
-  \  \/             |      |             \/  /
-   \  |             |      |             |  /
-    \ |    ___      |      |      ___    | /
-     \|   / @ \     /      \     / @ \   |/
-      |   \___/    /        \    \___/   |
-      |           /          \           |
-       \         |    ____    |         /
-        \        |   (____)   |        /
-         \        \    ||    /        /
-          \        \_  ||  _/        /
-           '.        \_/\_/        .'
-             '-.                .-'
-                '-.__________.-'
+export const kyra = `
+          ███▄▄                                 ███
+          ██████▄▄                            ▄██▀█▄
+          █  ▀██████▄                       ▄██▀ ▄█▀
+          █▄   ▀██████▄                    ▄█▀   ██
+           █     ▀██████▄▄▄▄▄▄▄▄     ▄▄▄▄▄██     █
+            ▀      █████████████▄       █████▄  ██
+             █▄  ████████████████        █████▄ █
+             ▀█   ████████████████       ▀███████
+             ▄    ████████████████       ████████
+             ▀▀▄▄▄██████████▀█████▀      ███▀█▀██
+                 ▀███████▀███▀▀██▀ ▄▄███▄ ▀█▄▀█▀█
+                  ▄███████▄▄▄▄█▀ ▄████████▄ ▀█▄██
+                  ████████████▀  ██████████  ▄███
+                 ▄████████████   ▀██████████  ███
+                ▄█████████████      ▀███████  ██▀
+               ▄█████████████       ████████  █
+               █████▀████████      ▄██▀▀███▀  █
+               ██████▀█████▀      ▄       █   █
+               ██████ ▀▀████▄▄▄▄▄▀        █▄ ▄▀
+           ▄█  ▀▀▀▀▀█       ▀▀▀           ▀▀▀
+         ▄███       ▀▄
+         ███▀                           ▄
+        ▄██▀                           ▄██
+        ██▀                           ████▄
+       ▄██                           ██████
+      ███                            ▀██████
+    ▄████                              ▀███▀█
+   ▄█████▄                              ▀██ █
+  ████████▄                                  █
+ ███████████                                 █
+████████████▄                               █
+█████████████                              ▄█
+█████████████▄                             █
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 `.slice(1, -1).split("\n");
