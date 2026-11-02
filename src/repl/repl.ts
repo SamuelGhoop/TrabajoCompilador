@@ -1,4 +1,4 @@
-// Módulo repl implementa el REPL (Read-Eval-Print Loop) de CatCompiler:
+// Módulo repl implementa el REPL (Read-Eval-Print Loop) de KyraCompiler:
 // un ciclo interactivo que
 //
 //	Read  → lee una línea que escribe el usuario,
@@ -93,7 +93,7 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 						imprimirAyuda(escribir);
 						break;
 					case ":salir":
-						escribir("¡Miau! Hasta luego.\n");
+						escribir("¡Guau! Hasta luego.\n");
 						return;
 					default:
 						escribir(`Comando desconocido ${JSON.stringify(line)}. Escribe :ayuda\n`);
@@ -190,10 +190,10 @@ function probarParser(escribir: (t: string) => void, line: string): void {
 }
 
 // imprimirErroresParser muestra los errores de sintaxis encontrados, uno
-// por renglón, junto con Pola, la mascota del compilador.
+// por renglón, junto con Kyra, la mascota del compilador.
 function imprimirErroresParser(escribir: (t: string) => void, errors: string[]): void {
-	escribir(" /\\_/\\   ¡Miau! Pola encontró errores de sintaxis:\n");
-	escribir("( o.o )\n");
+	escribir(" |\\_._/|   ¡Guau! Kyra encontró errores de sintaxis:\n");
+	escribir(" ( o|o )\n");
 	for (const msg of errors) {
 		escribir(`\t${msg}\n`);
 	}
