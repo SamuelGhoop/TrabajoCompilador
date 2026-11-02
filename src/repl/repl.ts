@@ -2,32 +2,38 @@
 // un ciclo interactivo que
 //
 //	Read  → lee una línea que escribe el usuario,
-//	Eval  → la procesa (por ahora con el lexer o con el parser, todavía no
-//	        hay evaluador),
+//	Eval  → la procesa (con el lexer, el parser o el evaluador),
 //	Print → muestra el resultado,
 //	Loop  → y vuelve a empezar.
 //
-// El REPL tiene dos MODOS:
+// El REPL tiene tres MODOS:
 //   - lexer:  muestra la lista de tokens de la línea.
 //   - parser: muestra el programa reconstruido y el AST en forma de árbol,
 //     o los errores de sintaxis si los hay.
+//   - eval:   ejecuta la línea y muestra el resultado. Las variables y
+//     funciones se recuerdan de una línea a otra.
 //
-// El modo se elige al iniciar y se puede cambiar con los comandos :lexer y
-// :parser. Los comandos del REPL empiezan con ':' para no confundirse con
+// El modo se elige al iniciar y se puede cambiar con los comandos :lexer,
+// :parser y :eval. Los comandos del REPL empiezan con ':' para no confundirse con
 // código del lenguaje.
 import * as readline from "node:readline";
 import type { Readable, Writable } from "node:stream";
 
 import * as ast from "../ast/ast";
+import { evaluar } from "../evaluator/evaluator";
 import { Lexer } from "../lexer/lexer";
+import { Environment } from "../object/environment";
+import * as object from "../object/object";
 import { Parser } from "../parser/parser";
 import * as token from "../token/token";
 
 // Modos de funcionamiento del REPL. Se usa el mismo texto en el prompt
-// ("lexer>> " o "parser>> ") para que el usuario sepa en qué modo está.
+// ("lexer>> ", "parser>> " o "eval>> ") para que el usuario sepa en qué
+// modo está.
 const modoLexer = "lexer";
 const modoParser = "parser";
-type Modo = typeof modoLexer | typeof modoParser;
+const modoEval = "eval";
+type Modo = typeof modoLexer | typeof modoParser | typeof modoEval;
 
 // LectorDeLineas entrega la entrada línea por línea; devuelve null cuando
 // la entrada se termina (por ejemplo al presionar Ctrl+D). Cumple el papel
@@ -52,6 +58,11 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 		return r.done ? null : r.value;
 	};
 	const escribir = (texto: string) => output.write(texto);
+
+	// El entorno se crea UNA vez por sesión: así lo que se declara en una
+	// línea (let x = 5) sigue existiendo en las siguientes. print escribe
+	// en la misma salida que el REPL.
+	const env = new Environment(null, escribir);
 
 	try {
 		// 1. Se pregunta qué se quiere probar.
@@ -89,6 +100,10 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 						modo = modoParser;
 						escribir("Modo parser: se mostrará el AST.\n");
 						break;
+					case ":eval":
+						modo = modoEval;
+						escribir("Modo evaluador: se ejecutará el código.\n");
+						break;
 					case ":ayuda":
 						imprimirAyuda(escribir);
 						break;
@@ -104,8 +119,10 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 			// 4. Si no es comando, es código: se procesa según el modo actual.
 			if (modo === modoLexer) {
 				probarLexer(escribir, line);
-			} else {
+			} else if (modo === modoParser) {
 				probarParser(escribir, line);
+			} else {
+				probarEvaluador(escribir, line, env);
 			}
 		}
 	} finally {
@@ -114,8 +131,8 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 }
 
 // elegirModo muestra un menú para que el usuario elija si quiere probar
-// el lexer o el parser. Acepta "1"/"lexer" o "2"/"parser" (sin importar
-// mayúsculas). Si la respuesta no es válida, vuelve a preguntar.
+// el lexer, el parser o el evaluador. Acepta "1"/"lexer", "2"/"parser" o
+// "3"/"eval" (sin importar mayúsculas). Si la respuesta no es válida, vuelve a preguntar.
 //
 // Devuelve el modo elegido, o null si la entrada se terminó antes de
 // elegir (en ese caso el REPL debe cerrarse).
@@ -124,6 +141,7 @@ async function elegirModo(leerLinea: LectorDeLineas, escribir: (t: string) => vo
 		escribir("\n¿Qué quieres probar?\n");
 		escribir("  1) Lexer  (ver los tokens)\n");
 		escribir("  2) Parser (ver el AST)\n");
+		escribir("  3) Evaluador (ejecutar el código)\n");
 		escribir("Opción: ");
 
 		const respuesta = await leerLinea();
@@ -138,8 +156,11 @@ async function elegirModo(leerLinea: LectorDeLineas, escribir: (t: string) => vo
 			case "2":
 			case "parser":
 				return modoParser;
+			case "3":
+			case "eval":
+				return modoEval;
 			default:
-				escribir("Opción no válida, escribe 1 o 2.\n");
+				escribir("Opción no válida, escribe 1, 2 o 3.\n");
 		}
 	}
 }
@@ -149,6 +170,7 @@ function imprimirAyuda(escribir: (t: string) => void): void {
 	escribir("\nComandos:\n");
 	escribir("  :lexer   cambiar a modo lexer\n");
 	escribir("  :parser  cambiar a modo parser\n");
+	escribir("  :eval    cambiar a modo evaluador\n");
 	escribir("  :ayuda   mostrar esta ayuda\n");
 	escribir("  :salir   salir del REPL\n");
 	escribir("\n");
@@ -187,6 +209,33 @@ function probarParser(escribir: (t: string) => void, line: string): void {
 	escribir(`  ${program}\n`);
 	escribir("AST:\n");
 	imprimirArbol(escribir, program, "", "");
+}
+
+// probarEvaluador pasa la línea por el lexer, el parser y el evaluador.
+//   - Si hay errores de sintaxis, los muestra y no ejecuta nada.
+//   - Si la ejecución da un error, lo muestra junto con Kyra.
+//   - Si no, muestra el resultado. Cuando el resultado es null (por ejemplo
+//     tras un let o un ciclo) no se muestra nada, para no llenar la pantalla
+//     de "null".
+function probarEvaluador(escribir: (t: string) => void, line: string, env: Environment): void {
+	const p = new Parser(new Lexer(line));
+	const program = p.parseProgram();
+
+	if (p.getErrors().length > 0) {
+		imprimirErroresParser(escribir, p.getErrors());
+		return;
+	}
+
+	const result = evaluar(program, env);
+	if (result instanceof object.ErrorObj) {
+		escribir(" |\\_._/|   ¡Guau! Kyra encontró un error al ejecutar:\n");
+		escribir(" ( o|o )\n");
+		escribir(`\t${result.message}\n`);
+		return;
+	}
+	if (result !== object.NULL) {
+		escribir(result.inspect() + "\n");
+	}
 }
 
 // imprimirErroresParser muestra los errores de sintaxis encontrados, uno

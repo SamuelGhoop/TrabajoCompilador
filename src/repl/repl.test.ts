@@ -37,9 +37,9 @@ test("TestReplParser", async () => {
 });
 
 test("TestReplLexerAndCommands", async () => {
-  const out = await ejecutar(["3", "LEXER", 'x % "hi"', ":foo", ":parser", "let = 1", ":lexer"]);
+  const out = await ejecutar(["4", "LEXER", 'x % "hi"', ":foo", ":parser", "let = 1", ":lexer"]);
 
-  assert.ok(out.includes("Opción no válida, escribe 1 o 2."));
+  assert.ok(out.includes("Opción no válida, escribe 1, 2 o 3."));
   assert.ok(out.includes('{Type:IDENT Literal:x}\n{Type:% Literal:%}\n{Type:STRING Literal:hi}\n'));
   assert.ok(out.includes('Comando desconocido ":foo". Escribe :ayuda'));
   assert.ok(out.includes("Modo parser: se mostrará el AST."));
@@ -72,6 +72,28 @@ test("TestReplTreeBranches", async () => {
       "",
     ].join("\n"),
   ));
+});
+
+test("TestReplEvaluador", async () => {
+  const out = await ejecutar([
+    "3",
+    "let x = 1 + 2 * 3;",
+    "x * 2",
+    'let saludo = function(n) { "Hola " + n };',
+    'saludo("Kyra")',
+    'print("x vale", x)',
+    "10 / 0",
+    "let = 1",
+    ":salir",
+  ]);
+
+  // El let no imprime nada; la variable sigue viva en la línea siguiente.
+  assert.ok(out.includes("eval>> eval>> 14\n"));
+  assert.ok(out.includes('eval>> eval>> "Hola Kyra"\n'));
+  // print escribe sin comillas, y como devuelve null no se imprime "null".
+  assert.ok(out.includes("eval>> x vale 7\neval>> "));
+  assert.ok(out.includes("Kyra encontró un error al ejecutar:\n ( o|o )\n\tdivisión entre cero\n"));
+  assert.ok(out.includes("Kyra encontró errores de sintaxis:"));
 });
 
 test("TestReplEmptyInput", async () => {
