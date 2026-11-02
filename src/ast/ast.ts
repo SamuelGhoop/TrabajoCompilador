@@ -505,7 +505,7 @@ export interface HashPair {
 // HashLiteral representa un hash (diccionario) escrito en el código:
 //
 //	{<clave>: <valor>, ...}
-//	ej: {"nombre": "Pola", "edad": 3}
+//	ej: {"nombre": "Kyra", "edad": 3}
 //
 // Las parejas se guardan en una lista (y no en un Map) para conservar
 // el orden en que se escribieron y para que dos claves que se escriben
