@@ -452,7 +452,11 @@ function evaluarAsignacion(node: ast.AssignExpression, env: Environment): object
 	if (node.left instanceof ast.Identifier) {
 		const name = node.left.value;
 		if (env.get(name) === undefined) {
-			return new object.ErrorObj(`identificador no definido: ${name}`);
+			// El error se marca en la variable (no en el '='), que es lo que falta.
+			const error = new object.ErrorObj(`identificador no definido: ${name}`);
+			error.line = node.left.token.line;
+			error.column = node.left.token.column;
+			return error;
 		}
 		const value = evaluar(node.value, env);
 		if (esError(value)) {
