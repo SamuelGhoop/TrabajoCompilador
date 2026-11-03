@@ -50,10 +50,14 @@ evaluator>> :cargar examples/05_funciones.ssg
 evaluator>> factorial(5)
 120
 evaluator>> 10 / 0
- |\_._/|   ¡Guau! Kyra encontró errores:
- ( o|o )
+ |\_._/|   ¡Auch! Kyra tropezó al ejecutar:
+ ( x|x )
 	Error de ejecución en línea 1, columna 4: división por cero
+	 1 | 10 / 0
+	   |    ^
 ```
+
+Cada error dice en qué etapa ocurrió (léxica, sintáctica o de ejecución) y en qué línea y columna, y muestra esa línea del código con una flecha bajo el lugar exacto. Kyra pone una cara distinta según la etapa: `( O|o )` léxica, `( -|- )` sintáctica, `( x|x )` de ejecución. Y si escribes `kyra()`, aparece ella.
 
 | Comando | Acción |
 | --- | --- |
