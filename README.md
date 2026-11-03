@@ -127,7 +127,7 @@ pa (parce i = 0; i < cuantos(combo); i = i + 1) { diga(combo[i]); }
 | `function` · `return` | `vuelta` · `devuelva` | "hacer una vuelta" |
 | `if` · `elif` · `else` | `pilas` · `osea` · `deResto` | "¡pilas si…!", "o sea, si…", "de resto…" |
 | `while` · `for` | `dele` · `pa` | "¡dele mientras…!", "pa' cada uno" |
-| `true` · `false` | `deUna` · `nanai` | "¡de una!", "¡nanai cucas!" |
+| `true` · `false` | `deUna` · `paila` | "¡de una!", "¡paila!" |
 | `print` · `len` · `type` | `diga` · `cuantos` · `queEs` | |
 
 Las palabras llevan mayúsculas donde se indica (`deUna`, `deResto`, `queEs`), sin tildes ni espacios, porque el lexer solo acepta palabras de letras ASCII.
