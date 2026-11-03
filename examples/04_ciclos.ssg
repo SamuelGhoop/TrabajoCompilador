@@ -1,0 +1,45 @@
+// Ciclos: while y for.
+// Ejecutar: npm start -- examples/04_ciclos.ssg
+
+// while repite mientras la condición sea verdadera.
+let n = 5;
+let factorial = 1;
+while (n > 0) {
+    factorial = factorial * n;
+    n = n - 1;
+}
+print("5! =", factorial);
+
+// for al estilo C: (inicio; condición; actualización).
+let suma = 0;
+for (let i = 1; i <= 10; i = i + 1) {
+    suma = suma + i;
+}
+print("1 + 2 + ... + 10 =", suma);
+
+// Ciclos anidados: la tabla del 1 al 3.
+for (let fila = 1; fila <= 3; fila = fila + 1) {
+    let linea = "";
+    for (let col = 1; col <= 3; col = col + 1) {
+        linea = linea + str(fila * col) + " ";
+    }
+    print(linea);
+}
+
+// Recorrer un arreglo con su longitud.
+let colores = ["negro", "blanco", "atigrado"];
+for (let i = 0; i < len(colores); i = i + 1) {
+    print("color", i, ":", colores[i]);
+}
+
+// Un return dentro de un ciclo sale de toda la función.
+let primerMultiplo = function(de, desde) {
+    let k = desde;
+    while (true) {
+        if (k % de == 0) {
+            return k;
+        }
+        k = k + 1;
+    }
+};
+print("primer múltiplo de 7 desde 50:", primerMultiplo(7, 50));
