@@ -8,7 +8,8 @@
     "test": "tsx --test \"src/**/*.test.ts\" \"tests/**/*.test.ts\"",
     "check": "tsc",
     "start": "tsx src/main.ts",
-    "ui": "tsx src/web/servidor.ts"
+    "ui": "tsx src/web/servidor.ts",
+    "parce": "tsx scripts/a-parce.ts"
   },
   "repository": {
     "type": "git",
