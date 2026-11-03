@@ -1,0 +1,25 @@
+// Variables locales y globales con el mismo nombre.
+let x = 1;
+let f = function(x) { x + 10 };
+print(f(5), x);
+
+let g = function() { let x = 100; x };
+print(g(), x);
+
+let h = function() { x = 50; };
+h();
+print(x);
+
+// La función ve el ámbito donde se definió, no el de quien la llama.
+let y = "global";
+let verY = function() { y };
+let llamar = function() { let y = "local"; verY() };
+print(llamar());
+
+// Cada llamada recursiva tiene su propia variable local.
+let profundidad = function(n) {
+    let mia = n;
+    if (n > 0) { profundidad(n - 1); }
+    mia
+};
+print(profundidad(3));
