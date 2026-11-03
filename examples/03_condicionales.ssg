@@ -1,0 +1,44 @@
+// Condicionales: if, elif, else y condicionales anidados.
+// Ejecutar: npm start -- examples/03_condicionales.ssg
+
+let clasificar = function(nota) {
+    if (nota >= 90) {
+        return "excelente";
+    } elif (nota >= 70) {
+        return "aprobado";
+    } elif (nota >= 50) {
+        return "habilitación";
+    } else {
+        return "reprobado";
+    }
+};
+
+print(95, "->", clasificar(95));
+print(75, "->", clasificar(75));
+print(55, "->", clasificar(55));
+print(20, "->", clasificar(20));
+
+// Condicionales anidados: un if dentro de otro.
+let describir = function(n) {
+    if (n >= 0) {
+        if (n % 2 == 0) {
+            "positivo par"
+        } else {
+            "positivo impar"
+        }
+    } else {
+        "negativo"
+    }
+};
+
+print(4, "es", describir(4));
+print(7, "es", describir(7));
+print(-3, "es", describir(-3));
+
+// El if es una expresión: produce un valor que se puede guardar.
+let edad = 20;
+let etapa = if (edad >= 18) { "adulto" } else { "menor" };
+print("con", edad, "años es", etapa);
+
+// Solo false y null son falsos: el 0 y el texto vacío cuentan como verdaderos.
+if (0) { print("el 0 cuenta como verdadero") }
