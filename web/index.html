@@ -178,27 +178,13 @@ html, body {
 }
 
 /* ------------------------------------------------------------- KYRA (PIXELS) */
-/* El retrato de Kyra viene de src/kyra.ts: cada carácter son DOS píxeles
-   (▀ ▄ █). Sin espacio entre filas (line-height 1) ni entre letras, o el
-   dibujo sale rayado. */
+/* El retrato de Kyra (solo lo dibuja kyra() o Kyra(), desde src/kyra.ts):
+   cada carácter son DOS píxeles (▀ ▄ █). Sin espacio entre filas
+   (line-height 1) ni entre letras, o el dibujo sale rayado. */
 .art { white-space: pre; line-height: 1; letter-spacing: 0; }
 
 /* --------------------------------------------------------------- BOOT SCREEN */
 #boot { display: flex; flex-direction: column; height: 100%; letter-spacing: .2em; }
-#bootMain { display: flex; gap: 0 2.5em; align-items: flex-start; }
-#bootLeft { flex: 1 1 auto; min-width: 0; }
-#bootKyra { flex: 0 0 auto; font-size: .5em; margin-top: .4em; }
-
-/* Kyra chiquita en el encabezado (clic: ladra) */
-#head { position: relative; }
-#headKyra {
-  position: absolute;
-  top: 0; right: 0;
-  font-size: .125em;
-  cursor: pointer;
-  opacity: .9;
-}
-#headKyra:hover { color: var(--phos-bright); }
 #bootText { white-space: pre-wrap; text-transform: uppercase; }
 #bootBar  { margin-top: .6em; letter-spacing: 0; }
 #bootReady { margin-top: .3em; }
@@ -307,7 +293,6 @@ html, body {
 }
 .out > div { white-space: pre; min-height: 1.4em; }
 .out > div.art { min-height: 0; font-size: .55em; }   /* el retrato de kyra() */
-.out > div.art.mini { font-size: .38em; margin: .3em 0 .5em; }   /* Kyra junto a un error */
 .out .err  { color: var(--red); text-shadow: var(--glow-red); }
 .out .val  { color: var(--phos-bright); }
 .out .dim  { color: var(--phos-dim); text-shadow: none; }
@@ -401,21 +386,15 @@ html, body {
 
         <!-- ============================ BOOT ============================ -->
         <div id="boot" class="view">
-          <div id="bootMain">
-            <div id="bootLeft">
-              <div><span id="bootText"></span><span class="cur">▮</span></div>
-              <div id="bootBar"></div>
-              <div id="bootReady"></div>
-            </div>
-            <div id="bootKyra" class="art" aria-label="Kyra, la boston terrier"></div>
-          </div>
+          <div><span id="bootText"></span><span class="cur">▮</span></div>
+          <div id="bootBar"></div>
+          <div id="bootReady"></div>
           <div id="bootHint">[ CLIC O CUALQUIER TECLA PARA SALTAR &nbsp;·&nbsp; UN CLIC TAMBIÉN ACTIVA EL SONIDO ]</div>
         </div>
 
         <!-- ========================== TERMINAL ========================== -->
         <div id="term" class="view hidden">
           <div id="head">
-            <div id="headKyra" class="art" title="¡Guau!" aria-hidden="true"></div>
             <div>KYRACOMPILER (TM) TERMLINK PROTOCOL</div>
             <div class="sub">UNIVERSIDAD EIA · COMPILADORES · LEXER → PARSER → EVALUADOR</div>
             <div id="status">&gt; LISTO. ESCRIBA UN PROGRAMA Y PULSE [EJECUTAR]<span class="cur">▮</span></div>
@@ -525,7 +504,7 @@ function lsGet(k, def) { try { const v = localStorage.getItem(k); return v === n
 function lsSet(k, v)   { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
 const el = {};
-["content","screen","led","boot","bootText","bootBar","bootReady","bootKyra","headKyra","term","status","editor","gutter",
+["content","screen","led","boot","bootText","bootBar","bootReady","term","status","editor","gutter",
  "posCursor","out","btnRun","btnStop","ejemplos","btnClear","btnHelp","btnMute","btnBoot","help",
  "btnHelpClose","fxStatic","fxRed","fxWhite","powerOn","poLine"].forEach(id => el[id] = $(id));
 
@@ -673,7 +652,6 @@ async function runBoot(forceFull) {
 
   bootSkipped = false;
   el.bootText.textContent = ""; el.bootBar.textContent = ""; el.bootReady.textContent = "";
-  el.bootKyra.textContent = "";
   el.boot.classList.remove("hidden"); el.term.classList.add("hidden");
   el.boot.style.opacity = "1";
   const saltar = () => { bootSkipped = true; };
@@ -707,15 +685,6 @@ async function runBoot(forceFull) {
     el.bootText.textContent += "\n";
     if (bootSkipped) { el.bootText.textContent += BOOT_LINES.slice(i + 1).join("\n"); break; }
     if (linea.endsWith("¡GUAU!")) SFX.bark();
-  }
-
-  /* Kyra "despierta": su retrato aparece fila por fila, como un escáner */
-  el.bootKyra.textContent = "";
-  for (let f = 0; f < KYRA_ARTE.length; f++) {
-    if (bootSkipped) { el.bootKyra.textContent = KYRA_ARTE.join("\n"); break; }
-    el.bootKyra.textContent += (f > 0 ? "\n" : "") + KYRA_ARTE[f];
-    if (f % 3 === 0) SFX.load();
-    await sleep(rapido ? 4 : 28);
   }
 
   /* barra de progreso: bloques discretos */
@@ -892,7 +861,6 @@ function lineasSalida(r) {
   }
   if (r.errores.length > 0) {
     const [frase, cara] = KYRA[r.etapa] || KYRA.ejecucion;
-    if (KYRA_ARTE.length) out.push({ t: KYRA_ARTE.join("\n"), c: "art kyra mini" });
     out.push({ t: frase, c: "kyra" }, { t: cara, c: "kyra" });
     r.errores.forEach(e => out.push({ t: e, c: "err" }));
   } else if (r.valor !== null) {
@@ -1039,24 +1007,9 @@ function arrancarTerminal() {
   el.editor.focus();
 }
 
-/* El retrato de Kyra lo da el servidor (src/kyra.ts, el mismo de la
-   bienvenida de la terminal), para no tener el dibujo copiado en dos lados. */
-let KYRA_ARTE = [];
-async function cargarKyra() {
-  try {
-    KYRA_ARTE = await (await fetch("/api/kyra")).json();
-    el.headKyra.textContent = KYRA_ARTE.join("\n");
-  } catch (e) {}
-}
-el.headKyra.addEventListener("click", () => {
-  SFX.bark();
-  setStatus("¡GUAU, GUAU! KYRA LE MANDA SALUDOS, PARCE");
-});
-
 (async function main() {
   el.editor.value = lsGet("kyra_codigo", PROGRAMA_INICIAL) || PROGRAMA_INICIAL;
   cargarEjemplos();
-  await cargarKyra();
   renderMute();
   await runBoot(false);
   arrancarTerminal();
