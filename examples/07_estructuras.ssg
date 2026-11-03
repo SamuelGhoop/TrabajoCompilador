@@ -1,0 +1,41 @@
+// Estructuras de datos: arreglos y hashes (diccionarios).
+// Ejecutar: npm start -- examples/07_estructuras.ssg
+
+// --- Arreglos ---
+let numeros = [10, 20, 30];
+print("arreglo:", numeros);
+print("primero:", numeros[0], "último:", numeros[len(numeros) - 1]);
+print("fuera de rango da null:", numeros[99]);
+
+// Cambiar una posición que existe.
+numeros[1] = 25;
+print("después de numeros[1] = 25:", numeros);
+
+// + une dos arreglos en uno NUEVO (los originales no cambian).
+let todos = numeros + [40, 50];
+print("unidos:", todos);
+
+// push también devuelve un arreglo nuevo.
+let conUnoMas = push(numeros, 99);
+print("push:", conUnoMas, "original:", numeros);
+
+// Los elementos pueden ser de cualquier tipo, incluso otros arreglos.
+let matriz = [[1, 2], [3, 4]];
+matriz[1][0] = 30;
+print("matriz:", matriz);
+
+// --- Hashes ---
+let kyra = {"nombre": "Kyra", "raza": "boston terrier", "edad": 3};
+print("hash:", kyra);
+print("nombre:", kyra["nombre"]);
+print("clave que no existe da null:", kyra["color"]);
+
+// Cambiar y agregar claves.
+kyra["edad"] = kyra["edad"] + 1;
+kyra["color"] = "negro y blanco";
+print("actualizado:", kyra);
+print("cantidad de claves:", len(kyra));
+
+// Las claves pueden ser textos, enteros o booleanos.
+let mixto = {1: "uno", true: "verdadero", "dos": 2};
+print(mixto[1], mixto[true], mixto["dos"]);
