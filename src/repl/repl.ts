@@ -14,7 +14,8 @@
 //     funciones se recuerdan de una línea a otra.
 //
 // El modo se elige al iniciar y se puede cambiar con los comandos :lexer,
-// :parser y :evaluator. El comando :cargar ejecuta un archivo completo.
+// :parser y :evaluator. El comando :cargar ejecuta un archivo completo, y
+// :traza muestra el árbol de llamadas a funciones de un código.
 // Los comandos del REPL empiezan con ':' para no confundirse con código
 // del lenguaje.
 import * as readline from "node:readline";
@@ -25,6 +26,7 @@ import { ejecutar, ejecutarArchivo, mostrarValor, type Resultado } from "../inte
 import { Lexer } from "../lexer/lexer";
 import { Environment } from "../object/environment";
 import { Parser } from "../parser/parser";
+import { trazar } from "./traza";
 import * as token from "../token/token";
 
 // Modos de funcionamiento del REPL. Se usa el mismo texto en el prompt
@@ -91,6 +93,22 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 
 			// 3. Si la línea empieza con ':' es un comando del REPL, no código.
 			if (line.startsWith(":")) {
+				// :traza ejecuta el resto de la línea mostrando el árbol de
+				// llamadas a funciones (en el entorno de la sesión).
+				if (line === ":traza" || line.startsWith(":traza ")) {
+					const codigo = line.slice(":traza".length).trim();
+					if (codigo === "") {
+						escribir("Uso: :traza código   (por ejemplo  :traza fibonacci(4))\n");
+					} else {
+						const traza = trazar(codigo, env);
+						if (traza.resultado.errores.length === 0 || traza.lineas.length > 1) {
+							escribir(traza.lineas.join("\n") + "\n");
+						}
+						mostrarResultado(escribir, traza.resultado);
+					}
+					continue;
+				}
+
 				// :cargar recibe el resto de la línea como ruta, por eso se
 				// reconoce antes del switch (los demás comandos no llevan nada más).
 				if (line === ":cargar" || line.startsWith(":cargar ")) {
@@ -191,6 +209,7 @@ function imprimirAyuda(escribir: (t: string) => void): void {
 	escribir("  :parser              cambiar a modo parser\n");
 	escribir("  :evaluator           cambiar a modo evaluator (también :eval)\n");
 	escribir("  :cargar archivo.ssg  ejecutar un archivo en el entorno actual\n");
+	escribir("  :traza código        ejecutar mostrando el árbol de llamadas a funciones\n");
 	escribir("  :ayuda               mostrar esta ayuda\n");
 	escribir("  :salir               salir del REPL\n");
 	escribir("\n");
