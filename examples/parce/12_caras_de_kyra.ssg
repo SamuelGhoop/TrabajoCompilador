@@ -1,0 +1,43 @@
+// Versión en parce de examples/12_caras_de_kyra.ssg (generada con: npm run parce).
+// Las caras de Kyra: cada etapa del intérprete detecta una clase de error
+// distinta, y Kyra pone una cara distinta para cada una.
+// Ejecutar: npm start -- examples/parce/12_caras_de_kyra.ssg
+//
+// Un programa se detiene en su PRIMER error, así que este ejemplo no puede
+// provocar los tres de una vez: los dibuja como una galería, con el código
+// que provoca cada uno. Para verlos de verdad, copie ese código en el REPL
+// (npm start, opción 3) o en la interfaz web (npm run ui).
+
+parce tarjeta = vuelta(cara, frase, etapa, ejemplo, porQue) {
+    diga(" |\_._/|   " + frase);
+    diga(" " + cara);
+    diga("    etapa:     " + etapa);
+    diga("    pruebe:    " + ejemplo);
+    diga("    por qué:   " + porQue);
+    diga("");
+};
+
+diga("=========== LAS CARAS DE KYRA ===========");
+diga("");
+
+tarjeta("( O|o )", "¡Uy, parce! Kyra no reconoce algo que escribiste:",
+    "LÉXICA (la detecta el lexer)",
+    "let precio = 10 @ 2;",
+    "el carácter @ no existe en el lenguaje");
+
+tarjeta("( -|- )", "¡Qué boleta! Kyra no entiende cómo está armado el código:",
+    "SINTAXIS (la detecta el parser)",
+    "let = 5;",
+    "todas las palabras existen, pero falta el nombre después de let");
+
+tarjeta("( x|x )", "¡Paila! Kyra se tropezó al ejecutar:",
+    "EJECUCIÓN (la detecta el evaluador)",
+    "let plata = 5000; plata / 0",
+    "el programa está bien escrito, pero no se puede dividir por cero");
+
+tarjeta("( ^|^ )", "¡Bacano! Kyra cargó el archivo: sus funciones ya están disponibles.",
+    "TODO BIEN (en el REPL, al usar :cargar)",
+    ":cargar examples/05_funciones.ssg",
+    "el archivo no tuvo ningún error");
+
+diga("Fíjese en los ojos: O|o confundida, -|- enojada, x|x mareada, ^|^ feliz.");
