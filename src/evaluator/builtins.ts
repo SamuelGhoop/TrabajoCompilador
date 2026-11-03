@@ -9,6 +9,9 @@
 //	Arreglos:     first, last, rest, push
 //	Conversión:   str, int, type
 //	Sorpresa:     kyra
+//
+// Cada una tiene también un nombre en español (imprimir, longitud, ...): ver
+// nombresEnEspanol al final del archivo.
 import { kyra } from "../kyra";
 import type { Environment } from "../object/environment";
 import * as object from "../object/object";
@@ -137,3 +140,23 @@ export const builtins = new Map<string, object.Builtin>([
 		return object.NULL;
 	})],
 ]);
+
+// Nombres en español de las funciones integradas. Son la MISMA función con
+// otro nombre: imprimir("hola") hace lo mismo que print("hola").
+const nombresEnEspanol: [espanol: string, original: string][] = [
+	["imprimir", "print"],
+	["longitud", "len"],
+	["primero", "first"],
+	["ultimo", "last"],
+	["resto", "rest"],
+	["agregar", "push"],
+	["texto", "str"],
+	["entero", "int"],
+	["tipo", "type"],
+];
+for (const [espanol, original] of nombresEnEspanol) {
+	const funcion = builtins.get(original);
+	if (funcion !== undefined) {
+		builtins.set(espanol, funcion);
+	}
+}
