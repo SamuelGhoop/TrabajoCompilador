@@ -164,16 +164,81 @@ for while
   });
 });
 
-test("TestUnterminatedString", () => {
-  const l = new Lexer('let s = "hola');
-  const types = [l.nextToken(), l.nextToken(), l.nextToken(), l.nextToken(), l.nextToken()];
+// tokens devuelve todos los tokens de la entrada (sin el EOF) como
+// [tipo, literal, línea, columna].
+function tokens(input: string): [string, string, number, number][] {
+  const l = new Lexer(input);
+  const out: [string, string, number, number][] = [];
+  for (let t = l.nextToken(); t.type !== token.EOF; t = l.nextToken()) {
+    out.push([t.type, t.literal, t.line, t.column]);
+  }
+  return out;
+}
 
-  assert.deepEqual(types[3], { type: token.ILLEGAL, literal: '"hola' });
-  assert.equal(types[4].type, token.EOF);
+test("TestLogicalOperators", () => {
+  assert.deepEqual(tokens("a && b || !c"), [
+    [token.IDENT, "a", 1, 1],
+    [token.AND, "&&", 1, 3],
+    [token.IDENT, "b", 1, 6],
+    [token.OR, "||", 1, 8],
+    [token.BANG, "!", 1, 11],
+    [token.IDENT, "c", 1, 12],
+  ]);
 });
 
-test("TestIllegalChar", () => {
-  const l = new Lexer("@");
-  assert.deepEqual(l.nextToken(), { type: token.ILLEGAL, literal: "@" });
-  assert.equal(l.nextToken().type, token.EOF);
+test("TestPositions", () => {
+  // Las líneas y columnas empiezan en 1; un salto de línea pasa a la
+  // siguiente línea, columna 1. La tabulación cuenta como una columna.
+  assert.deepEqual(tokens('let x = 10;\n\tx == "hi"'), [
+    [token.LET, "let", 1, 1],
+    [token.IDENT, "x", 1, 5],
+    [token.ASSIGN, "=", 1, 7],
+    [token.INT, "10", 1, 9],
+    [token.SEMICOLON, ";", 1, 11],
+    [token.IDENT, "x", 2, 2],
+    [token.EQ, "==", 2, 4],
+    [token.STRING, "hi", 2, 7],
+  ]);
 });
+
+test("TestComments", () => {
+  // Un comentario va desde "//" hasta el final de la línea; "/" solo sigue
+  // siendo la división.
+  assert.deepEqual(tokens("// comentario\nlet a = 4 / 2; // otro\n// fin"), [
+    [token.LET, "let", 2, 1],
+    [token.IDENT, "a", 2, 5],
+    [token.ASSIGN, "=", 2, 7],
+    [token.INT, "4", 2, 9],
+    [token.SLASH, "/", 2, 11],
+    [token.INT, "2", 2, 13],
+    [token.SEMICOLON, ";", 2, 14],
+  ]);
+});
+
+test("TestLexicalErrors", () => {
+  const l = new Lexer('let s = "hola\nx @ y & z');
+  const all: token.Token[] = [];
+  for (let t = l.nextToken(); t.type !== token.EOF; t = l.nextToken()) {
+    all.push(t);
+  }
+
+  // El lexer no se detiene: entrega ILLEGAL y sigue con lo demás.
+  assert.deepEqual(
+    all.filter((t) => t.type === token.ILLEGAL).map((t) => t.literal),
+    ['"hola\nx @ y & z'],
+  );
+  assert.deepEqual(l.getErrors(), [
+    'Error léxico en línea 1, columna 9: cadena sin cerrar "hola\nx @ y & z (falta la comilla de cierre)',
+  ]);
+
+  const l2 = new Lexer("x @ y & z | w");
+  while (l2.nextToken().type !== token.EOF) {
+    // se consumen todos los tokens
+  }
+  assert.deepEqual(l2.getErrors(), [
+    "Error léxico en línea 1, columna 3: carácter no reconocido '@'",
+    "Error léxico en línea 1, columna 7: carácter no reconocido '&'",
+    "Error léxico en línea 1, columna 11: carácter no reconocido '|'",
+  ]);
+});
+
