@@ -1,0 +1,2 @@
+// Error de ejecución: los hashes solo admiten claves enteras, booleanas o de texto.
+let h = {[1, 2]: "lista"};
