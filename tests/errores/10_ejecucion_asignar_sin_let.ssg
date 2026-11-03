@@ -1,0 +1,2 @@
+// Error de ejecución: asignar a una variable sin declararla con let.
+contador = 1;
