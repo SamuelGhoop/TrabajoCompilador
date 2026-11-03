@@ -35,7 +35,22 @@ export function ejecutar(codigo: string, env: Environment): Resultado {
 		return { errores, valor: null };
 	}
 
-	const valor = evaluar(program, env);
+	let valor: object.Obj;
+	try {
+		valor = evaluar(program, env);
+	} catch (e) {
+		// Una recursión demasiado profunda (por ejemplo, una función que se
+		// llama a sí misma sin caso base) agota la pila de JavaScript. Se
+		// reporta como un error de ejecución del lenguaje, no como un fallo
+		// del intérprete.
+		if (e instanceof RangeError) {
+			return {
+				errores: ["Error de ejecución: desbordamiento de pila (demasiadas llamadas anidadas; ¿falta el caso base de una recursión?)"],
+				valor: null,
+			};
+		}
+		throw e;
+	}
 	if (valor instanceof object.ErrorObj) {
 		return { errores: [valor.describir()], valor: null };
 	}
