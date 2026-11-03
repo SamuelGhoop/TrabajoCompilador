@@ -48,21 +48,24 @@ import * as token from "../token/token";
 // Precedencias
 // ---------------------------------------------------------------------------
 
-// Niveles de precedencia, de MENOR a MAYOR (en Go se numeraban con iota:
-// LOWEST = 1, ASSIGN = 2, ... INDEX = 10).
+// Niveles de precedencia, de MENOR a MAYOR (en Go se numeraban con iota).
 //
 // Un operador con mayor precedencia se agrupa primero. Por ejemplo, como
 // PRODUCT > SUM, en "1 + 2 * 3" la multiplicación se resuelve antes.
+// Los lógicos van por debajo de las comparaciones, como en C o Python:
+// "a < b && b < c" es "(a < b) && (b < c)", y && ata más que ||.
 export const LOWEST = 1;      // precedencia mínima: se usa al empezar a parsear una expresión
 export const ASSIGN = 2;      // x = 5          (la más baja de los operadores)
-export const EQUALS = 3;      // ==  !=
-export const LESSGREATER = 4; // >  <  >=  <=
-export const SUM = 5;         // +  -
-export const PRODUCT = 6;     // *  /  %
-export const PREFIX = 7;      // -X  !X         (operadores prefijos)
-export const EXPONENT = 8;    // **             (más fuerte que el prefijo: -2**2 = -(2**2))
-export const CALL = 9;        // miFuncion(X)
-export const INDEX = 10;      // arreglo[indice] (la más alta de todas)
+export const LOGIC_OR = 3;    // ||
+export const LOGIC_AND = 4;   // &&
+export const EQUALS = 5;      // ==  !=
+export const LESSGREATER = 6; // >  <  >=  <=
+export const SUM = 7;         // +  -
+export const PRODUCT = 8;     // *  /  %
+export const PREFIX = 9;      // -X  !X         (operadores prefijos)
+export const EXPONENT = 10;   // **             (más fuerte que el prefijo: -2**2 = -(2**2))
+export const CALL = 11;       // miFuncion(X)
+export const INDEX = 12;      // arreglo[indice] (la más alta de todas)
 
 // precedences asocia cada token que puede actuar como OPERADOR INFIJO con
 // su nivel de precedencia. Los tokens que no están en este mapa (por
@@ -73,6 +76,8 @@ export const INDEX = 10;      // arreglo[indice] (la más alta de todas)
 // se comportan como operadores infijos (llamada "f(x)" e índice "a[0]").
 const precedences = new Map<token.TokenType, number>([
 	[token.ASSIGN, ASSIGN],
+	[token.OR, LOGIC_OR],
+	[token.AND, LOGIC_AND],
 	[token.EQ, EQUALS],
 	[token.NOT_EQ, EQUALS],
 	[token.LT, LESSGREATER],
@@ -111,8 +116,8 @@ function quote(s: string): string {
 export class Parser {
 	private errors: string[] = []; // errores de sintaxis encontrados (no se detiene en el primero)
 
-	private curToken: token.Token = { type: "", literal: "" };  // token que se está analizando
-	private peekToken: token.Token = { type: "", literal: "" }; // token siguiente; permite "mirar adelante"
+	private curToken: token.Token = { type: "", literal: "", line: 0, column: 0 };  // token que se está analizando
+	private peekToken: token.Token = { type: "", literal: "", line: 0, column: 0 }; // token siguiente; permite "mirar adelante"
 
 	// Tablas que relacionan cada tipo de token con su función de parseo.
 	// Son el corazón del parser de Pratt: en lugar de un gran switch,
@@ -153,6 +158,8 @@ export class Parser {
 		this.registerInfix(token.LTE, infix);      // a <= b
 		this.registerInfix(token.GTE, infix);      // a >= b
 		this.registerInfix(token.POW, infix);      // a ** b
+		this.registerInfix(token.AND, infix);      // a && b
+		this.registerInfix(token.OR, infix);       // a || b
 		this.registerInfix(token.ASSIGN, (left) => this.parseAssignExpression(left));  // a = b
 		this.registerInfix(token.LPAREN, (left) => this.parseCallExpression(left));    // f(a, b)
 		this.registerInfix(token.LBRACKET, (left) => this.parseIndexExpression(left)); // a[i]
@@ -178,17 +185,25 @@ export class Parser {
 		this.infixParseFns.set(tokenType, fn);
 	}
 
-	// getErrors devuelve los errores de sintaxis encontrados durante el parseo.
-	// Quien use el parser (por ejemplo el REPL) debe revisar esta lista después
-	// de llamar a parseProgram: si no está vacía, el AST puede estar incompleto.
+	// getErrors devuelve los errores encontrados al analizar el código:
+	// primero los LÉXICOS (que detecta el lexer) y luego los SINTÁCTICOS
+	// (que detecta el parser). Quien use el parser (por ejemplo el REPL) debe
+	// revisar esta lista después de llamar a parseProgram: si no está vacía,
+	// el AST puede estar incompleto y no se debe ejecutar.
 	getErrors(): string[] {
-		return this.errors;
+		return [...this.l.getErrors(), ...this.errors];
+	}
+
+	// syntaxError registra un error de sintaxis indicando dónde ocurrió.
+	private syntaxError(tok: token.Token, mensaje: string): void {
+		this.errors.push(`Error de sintaxis en ${token.posicion(tok)}: ${mensaje}`);
 	}
 
 	// peekError registra un error cuando el siguiente token no es el esperado.
 	// Ej: en "let = 5" se esperaba IDENT después de 'let' pero llegó '='.
 	private peekError(t: token.TokenType): void {
-		this.errors.push(
+		this.syntaxError(
+			this.peekToken,
 			`se esperaba ${t}, pero se encontró ${this.peekToken.type} (${quote(this.peekToken.literal)})`,
 		);
 	}
@@ -196,8 +211,16 @@ export class Parser {
 	// noPrefixParseFnError registra un error cuando el token actual no puede
 	// iniciar una expresión, porque no tiene función prefija registrada.
 	// Ej: una expresión que empieza con ')' o con '*'.
+	// Un token ILLEGAL no se reporta aquí: el lexer ya lo reportó como error
+	// léxico, y repetirlo como error de sintaxis solo confundiría.
 	private noPrefixParseFnError(t: token.TokenType): void {
-		this.errors.push(`no se puede iniciar una expresión con ${t} (${quote(this.curToken.literal)})`);
+		if (t === token.ILLEGAL) {
+			return;
+		}
+		this.syntaxError(
+			this.curToken,
+			`no se puede iniciar una expresión con ${t} (${quote(this.curToken.literal)})`,
+		);
 	}
 
 	// nextToken avanza una posición: el siguiente pasa a ser el actual y se
@@ -387,7 +410,7 @@ export class Parser {
 		}
 
 		if (!this.curTokenIs(token.RBRACE)) {
-			this.errors.push("bloque sin cerrar: falta '}'");
+			this.syntaxError(block.token, "bloque sin cerrar: falta '}' para la '{' de esta posición");
 		}
 
 		return block;
@@ -470,7 +493,7 @@ export class Parser {
 	private parseIntegerLiteral(): ast.Expression | null {
 		const value = BigInt(this.curToken.literal);
 		if (value !== BigInt.asIntN(64, value)) {
-			this.errors.push(`no se pudo convertir ${quote(this.curToken.literal)} a entero`);
+			this.syntaxError(this.curToken, `no se pudo convertir ${quote(this.curToken.literal)} a entero: no cabe en 64 bits`);
 			return null;
 		}
 		return new ast.IntegerLiteral(this.curToken, value);
@@ -873,7 +896,7 @@ export class Parser {
 		// Solo tiene sentido asignar a una variable (x) o a una posición de un
 		// arreglo/hash (a[0]). Asignar a "5" o a "a + b" es un error.
 		if (!(left instanceof ast.Identifier || left instanceof ast.IndexExpression)) {
-			this.errors.push(`no se puede asignar a ${left === null ? "<vacío>" : left.toString()}`);
+			this.syntaxError(this.curToken, `no se puede asignar a ${left === null ? "<vacío>" : left.toString()}: solo se puede asignar a una variable o a una posición (x = ..., a[i] = ...)`);
 			return null;
 		}
 

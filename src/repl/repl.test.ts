@@ -43,7 +43,7 @@ test("TestReplLexerAndCommands", async () => {
   assert.ok(out.includes('{Type:IDENT Literal:x}\n{Type:% Literal:%}\n{Type:STRING Literal:hi}\n'));
   assert.ok(out.includes('Comando desconocido ":foo". Escribe :ayuda'));
   assert.ok(out.includes("Modo parser: se mostrará el AST."));
-  assert.ok(out.includes(' ( o|o )\n\tse esperaba IDENT, pero se encontró = ("=")\n'));
+  assert.ok(out.includes(' ( o|o )\n\tError de sintaxis en línea 1, columna 5: se esperaba IDENT, pero se encontró = ("=")\n'));
   // Al acabarse la entrada (como con Ctrl+D) el REPL termina en el prompt.
   assert.ok(out.endsWith("lexer>> "));
 });

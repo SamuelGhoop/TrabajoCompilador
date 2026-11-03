@@ -124,21 +124,59 @@ test("TestIntegerLiteral", () => {
   assert.equal(lit.value, 9223372036854775807n);
 });
 
+test("TestLogicalPrecedence", () => {
+  const tests: [string, string][] = [
+    // && ata más que ||, y ambos menos que las comparaciones.
+    ["a && b || c && d", "((a && b) || (c && d))"],
+    ["a || b && c", "(a || (b && c))"],
+    ["x < 1 || x > 5 && !y", "((x < 1) || ((x > 5) && (!y)))"],
+    ["a == b && c != d", "((a == b) && (c != d))"],
+    // Ambos son asociativos por la izquierda.
+    ["a && b && c", "((a && b) && c)"],
+    // La asignación sigue siendo la más baja.
+    ["ok = a || b", "ok = (a || b)"],
+  ];
+
+  for (const [input, expected] of tests) {
+    assert.equal(parse(input).toString(), expected, `entrada: ${input}`);
+  }
+});
+
 test("TestParserErrors", () => {
   const tests: [string, string[]][] = [
     // El parser no se detiene en el primer error: tras abandonar el let,
     // sigue desde el '=' y reporta que no puede iniciar una expresión con él.
-    ["let = 5;", ['se esperaba IDENT, pero se encontró = ("=")', 'no se puede iniciar una expresión con = ("=")']],
-    ["let x 5;", ['se esperaba =, pero se encontró INT ("5")']],
-    ["*5", ['no se puede iniciar una expresión con * ("*")']],
-    ["5 = 3", ["no se puede asignar a 5"]],
-    ["if (x) { 1", ["bloque sin cerrar: falta '}'"]],
-    ["99999999999999999999", ['no se pudo convertir "99999999999999999999" a entero']],
-    ['"hola', ['no se puede iniciar una expresión con ILLEGAL ("\\"hola")']],
-    ["for (let i = 0 i < 3; ) {}", ['se esperaba ;, pero se encontró IDENT ("i")', 'no se puede iniciar una expresión con ) (")")']],
+    ["let = 5;", [
+      'Error de sintaxis en línea 1, columna 5: se esperaba IDENT, pero se encontró = ("=")',
+      'Error de sintaxis en línea 1, columna 5: no se puede iniciar una expresión con = ("=")',
+    ]],
+    ["let x 5;", ['Error de sintaxis en línea 1, columna 7: se esperaba =, pero se encontró INT ("5")']],
+    ["*5", ['Error de sintaxis en línea 1, columna 1: no se puede iniciar una expresión con * ("*")']],
+    ["5 = 3", [
+      "Error de sintaxis en línea 1, columna 3: no se puede asignar a 5: solo se puede asignar a una variable o a una posición (x = ..., a[i] = ...)",
+    ]],
+    // El error del bloque apunta a la '{' que quedó abierta.
+    ["if (x) {\n  1", ["Error de sintaxis en línea 1, columna 8: bloque sin cerrar: falta '}' para la '{' de esta posición"]],
+    ["99999999999999999999", [
+      'Error de sintaxis en línea 1, columna 1: no se pudo convertir "99999999999999999999" a entero: no cabe en 64 bits',
+    ]],
+    ["for (let i = 0 i < 3; ) {}", [
+      'Error de sintaxis en línea 1, columna 16: se esperaba ;, pero se encontró IDENT ("i")',
+      'Error de sintaxis en línea 1, columna 23: no se puede iniciar una expresión con ) (")")',
+    ]],
+    // En una línea posterior, la posición lo indica.
+    ["let a = 1;\nlet b = ;", ['Error de sintaxis en línea 2, columna 9: no se puede iniciar una expresión con ; (";")']],
   ];
 
   for (const [input, expected] of tests) {
     assert.deepEqual(parseErrors(input), expected, `entrada: ${input}`);
   }
 });
+
+test("TestLexicalErrorsComeFromTheLexer", () => {
+  // Un carácter desconocido o una cadena sin cerrar son errores LÉXICOS: los
+  // detecta el lexer y el parser no los repite como errores de sintaxis.
+  assert.deepEqual(parseErrors("1 + @ 2"), ["Error léxico en línea 1, columna 5: carácter no reconocido '@'"]);
+  assert.deepEqual(parseErrors('"hola'), ['Error léxico en línea 1, columna 1: cadena sin cerrar "hola (falta la comilla de cierre)']);
+});
+
