@@ -1,0 +1,3 @@
+// Error de sintaxis: falta cerrar un paréntesis.
+let x = (1 + 2;
+print(x);
