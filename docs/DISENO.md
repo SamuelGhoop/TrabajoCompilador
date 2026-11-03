@@ -47,7 +47,7 @@ STRING       = '"' { cualquier carácter excepto '"' } '"' ;
 comentario   = "//" { cualquier carácter excepto salto de línea } ;   (* se ignora *)
 ```
 
-Palabras reservadas: `let return function if elif else while for true false break`, cada una con un sinónimo en español que produce el mismo token: `sea retorna funcion si sinosi sino mientras para verdadero falso`. En la gramática, `"let"` significa "`let` o `sea`", y así con las demás. La condición de `if`/`while` puede ir con o sin paréntesis (los paréntesis son una expresión agrupada). Un `elif` se construye como un `if` anidado dentro del `else`.
+Palabras reservadas: `let return function if elif else while for true false break`, cada una con un sinónimo en español (`sea retorna funcion si sinosi sino mientras para verdadero falso`) y otro en español colombiano (`parce devuelva vuelta pilas osea deResto dele pa deUna nanai`) que producen el mismo token. En la gramática, `"let"` significa "`let`, `sea` o `parce`", y así con las demás. La condición de `if`/`while` puede ir con o sin paréntesis (los paréntesis son una expresión agrupada). Un `elif` se construye como un `if` anidado dentro del `else`.
 
 ## 2. Arquitectura
 
@@ -80,7 +80,7 @@ código ──▶ Lexer ──tokens──▶ Parser ──AST──▶ Evaluado
 - **Ámbitos.** Cada llamada a función crea un `Environment` cuyo exterior es el entorno donde se **definió** la función: eso da cierres (closures) y recursión correcta. `let` declara en el ámbito actual; `x = …` cambia la variable visible más cercana y es error si nunca se declaró. Los bloques `if`/`while`/`for` no crean ámbito.
 - **Mismo comportamiento que el evaluador del profesor**, para que sus programas de prueba den el mismo resultado: enteros de 64 bits con error de desbordamiento (se calculan con `bigint` y se revisa el rango), `+` une textos y arreglos, la variable del `for` sigue visible después del ciclo, un ciclo vale lo mismo que su última vuelta, solo `false` y `null` son falsos, y se usan sus mensajes de error.
 - **Extensiones propias:** `&&` y `||` con evaluación en cortocircuito (dan siempre un booleano), comentarios `//`, las funciones integradas `print`, `len`, `first`, `last`, `rest`, `push`, `str`, `int` y `type`, y la línea y columna en todos los errores, con la línea del código y una flecha (`^`) bajo la columna (`conContexto` en `interprete.ts`). En el REPL, Kyra cambia de cara según la etapa del error, y `kyra()` la dibuja.
-- **Palabras en español** (`sea x = 5;`): son sinónimos en el mapa `keywords` del lexer, que producen el mismo token que la palabra en inglés, así que el parser y el evaluador no cambian. Las funciones integradas también tienen nombre en español (`imprimir`, `longitud`, `texto`, …). Se conservan las palabras en inglés para que los programas del curso sigan funcionando.
+- **Palabras en español y en "parce"** (`sea x = 5;`, `parce x = 5;`): son sinónimos en el mapa `keywords` del lexer, que producen el mismo token que la palabra en inglés, así que el parser y el evaluador no cambian. Las funciones integradas también tienen esos nombres (`imprimir`/`diga`, `longitud`/`cuantos`, …). En el REPL, Kyra también habla en parce ("¡Uy, parce!", "¡Paila!", "¡Chao pues!"). Se conservan las palabras en inglés para que los programas del curso sigan funcionando.
 - **Pila grande.** El evaluador es recursivo y cada llamada del lenguaje usa varias llamadas de TypeScript; con la pila normal de Node, una recursión de unas 600 llamadas fallaba. Se ejecuta en un hilo con 256 MB de pila (se probaron 100 000 llamadas anidadas) y, si aun así se agota (recursión infinita), se reporta como error de ejecución.
 
 ## 4. Limitaciones conocidas
@@ -98,6 +98,6 @@ código ──▶ Lexer ──tokens──▶ Parser ──AST──▶ Evaluado
 Usamos **Claude Code** (asistente de programación de Anthropic) para: traducir de Go a TypeScript el lexer, el AST, el parser y el REPL del proyecto base; escribir el evaluador y las funciones integradas; agregar los operadores lógicos, la posición de los errores y la ejecución de archivos; escribir los ejemplos, las pruebas y la documentación; y encontrar y corregir el problema de rendimiento y el de la pila.
 
 Cómo verificamos que el código fuera correcto:
-- **Pruebas automáticas** (`npm test`, 83 casos): pruebas unitarias de cada etapa, más 31 programas en `tests/` con su salida esperada. Cada salida esperada se revisó a mano antes de guardarla.
+- **Pruebas automáticas** (`npm test`, 85 casos): pruebas unitarias de cada etapa, más 32 programas en `tests/` con su salida esperada. Cada salida esperada se revisó a mano antes de guardarla.
 - **Comparación con el proyecto del profesor:** el programa `examples/programa.ssg` (Ackermann, Fibonacci y Hanói) da el mismo resultado que indica su README, y los mensajes de error y las reglas del lenguaje se tomaron de su código.
 - **Revisión del código:** _(COMPLETAR antes de entregar: cómo revisó cada integrante el código, por ejemplo qué módulos leyó y qué probó en el REPL.)_
