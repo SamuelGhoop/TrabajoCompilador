@@ -47,9 +47,10 @@ const MAX_INT64 = 2n ** 63n - 1n;
 export function evaluar(node: ast.Node | null, env: Environment): object.Obj {
 	const result = evaluarNodo(node, env);
 	if (esError(result) && result.line === null && node !== null && "token" in node) {
-		const tok = (node as { token: { line: number; column: number } }).token;
+		const tok = (node as { token: { line: number; column: number; fuente?: string } }).token;
 		result.line = tok.line;
 		result.column = tok.column;
+		result.fuente = tok.fuente ?? null;
 	}
 	return result;
 }
@@ -66,6 +67,47 @@ export function evaluar(node: ast.Node | null, env: Environment): object.Obj {
 //
 // Para agregar un nodo nuevo al lenguaje basta con registrar aquí su función.
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Observador de llamadas (para el modo :traza del REPL)
+//
+// Mientras hay un observador, cada llamada a una función del usuario le
+// avisa al empezar (entrar, con el nombre y los argumentos) y al terminar
+// (salir, con el resultado). Con eso el REPL arma el árbol de llamadas.
+// Cuando no hay observador (lo normal), cuesta solo una comparación.
+// ---------------------------------------------------------------------------
+
+export interface ObservadorDeLlamadas {
+	entrar(nombre: string, args: object.Obj[]): void;
+	salir(resultado: object.Obj): void;
+}
+
+let observador: ObservadorDeLlamadas | null = null;
+
+// observarLlamadas ejecuta fn con el observador activo y, al terminar
+// (aunque fn falle), deja el observador que había antes.
+export function observarLlamadas<T>(obs: ObservadorDeLlamadas, fn: () => T): T {
+	const anterior = observador;
+	observador = obs;
+	try {
+		return fn();
+	} finally {
+		observador = anterior;
+	}
+}
+
+// nombreDeLaLlamada da el nombre con el que se mostrará una llamada: el de
+// la variable si se llamó por su nombre (fibonacci(3)), o el código de lo
+// que se llamó si no (crearSumador(2)(5) → "crearSumador(2)").
+function nombreDeLaLlamada(func: ast.Expression | null): string {
+	if (func instanceof ast.Identifier) {
+		return func.value;
+	}
+	if (func instanceof ast.FunctionLiteral) {
+		return "function";
+	}
+	return func === null ? "?" : `(${func.toString()})`;
+}
 
 // EvaluadorDeNodo es una función que evalúa un tipo concreto de nodo.
 type EvaluadorDeNodo<T> = (node: T, env: Environment) => object.Obj;
@@ -173,6 +215,14 @@ registrar(ast.CallExpression, (node, env) => {
 	const args = evaluarExpresiones(node.args, env);
 	if (args instanceof object.ErrorObj) {
 		return args;
+	}
+	// En modo :traza se avisa al observador de cada llamada a una función
+	// del usuario (las integradas, como print o len, no se muestran).
+	if (observador !== null && func instanceof object.FunctionObj) {
+		observador.entrar(nombreDeLaLlamada(node.func), args);
+		const result = aplicarFuncion(func, args, env);
+		observador.salir(result);
+		return result;
 	}
 	return aplicarFuncion(func, args, env);
 });
@@ -456,6 +506,7 @@ function evaluarAsignacion(node: ast.AssignExpression, env: Environment): object
 			const error = new object.ErrorObj(`identificador no definido: ${name}`);
 			error.line = node.left.token.line;
 			error.column = node.left.token.column;
+			error.fuente = node.left.token.fuente ?? null;
 			return error;
 		}
 		const value = evaluar(node.value, env);
