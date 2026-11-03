@@ -1,0 +1,2 @@
+Error de sintaxis en línea 2, columna 5: se esperaba IDENT, pero se encontró = ("=")
+Error de sintaxis en línea 2, columna 5: no se puede iniciar una expresión con = ("=")

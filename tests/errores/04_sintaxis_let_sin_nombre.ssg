@@ -1,0 +1,2 @@
+// Error de sintaxis: falta el nombre de la variable.
+let = 5;
