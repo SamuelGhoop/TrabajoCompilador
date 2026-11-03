@@ -22,6 +22,10 @@ export interface Token {
 	literal: string; // texto exacto que se leyó del código ("x", "5", "+")
 	line: number;    // línea donde empieza el token
 	column: number;  // columna donde empieza el token
+	// fuente es el código completo del que salió el token. Sirve para mostrar
+	// la línea correcta en un error de ejecución aunque la función que falla
+	// se haya definido en otra línea del REPL o en un archivo cargado.
+	fuente?: string;
 }
 
 // posicion devuelve el texto "línea L, columna C" de un token, para los

@@ -88,7 +88,7 @@ export class Lexer {
 		// La posición se toma ANTES de leer el token: es donde empieza.
 		const line = this.line;
 		const column = this.column;
-		const tok: token.Token = { ...this.readToken(), line, column };
+		const tok: token.Token = { ...this.readToken(), line, column, fuente: this.input };
 
 		if (tok.type === token.ILLEGAL) {
 			// De una cadena sin cerrar se muestra solo su primera línea: el
