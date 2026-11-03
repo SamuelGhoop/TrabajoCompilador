@@ -1,0 +1,5 @@
+// Error de ejecución: usar una variable que no se declaró.
+// Lo que se imprimió antes del error sí se muestra.
+print("antes del error");
+let total = subtotal + 1;
+print("esto ya no se ejecuta");
