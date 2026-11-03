@@ -1,0 +1,3 @@
+// Error de ejecución: llamar una función con argumentos de más.
+let doble = function(n) { n * 2 };
+doble(1, 2);
