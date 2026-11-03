@@ -1,0 +1,3 @@
+// Error de ejecución: convertir a entero un texto que no es un número.
+print(int("12"));
+print(int("doce"));
