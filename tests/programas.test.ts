@@ -59,6 +59,19 @@ for (const [carpeta, debeFallar] of [["tests/validos", false], ["tests/errores",
   }
 }
 
+// Cada ejemplo en parce (examples/parce/, generado con "npm run parce") debe
+// imprimir EXACTAMENTE lo mismo que su versión original: es el mismo programa
+// con otras palabras. Si esta prueba falla después de cambiar un ejemplo,
+// hay que volver a correr "npm run parce".
+const SOLO_UN_IDIOMA = new Set(["10_espanol.ssg", "11_parce.ssg"]);
+for (const archivo of programas("examples").filter((f) => !SOLO_UN_IDIOMA.has(f))) {
+  test(`examples/parce/${archivo} imprime lo mismo que examples/${archivo}`, { skip: archivo === "programa.ssg" && "tarda ~30 s" }, () => {
+    const rutaParce = join("examples", "parce", archivo);
+    assert.ok(existsSync(rutaParce), `falta ${rutaParce}: corra "npm run parce"`);
+    assert.equal(salidaDe(rutaParce).salida, salidaDe(join("examples", archivo)).salida);
+  });
+}
+
 // Los ejemplos de examples/ deben ejecutarse sin errores. programa.ssg (el
 // ejemplo del profesor) se omite porque calcula fibonacci(34), que tarda
 // cerca de medio minuto (ver "Limitaciones" en docs/DISENO.md).
