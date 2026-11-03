@@ -1,0 +1,15 @@
+// Arreglos y hashes.
+let a = [1, 2, 3];
+print(a, a[0], a[2], a[3], len(a));
+a[1] = 20;
+print(a);
+print(a + [4], a);
+let m = [[1, 2], [3, 4]];
+m[0][1] = 9;
+print(m, m[1][0]);
+
+let h = {"nombre": "Kyra", 1: "uno", true: "si"};
+print(h["nombre"], h[1], h[true], h["otra"]);
+h["edad"] = 3;
+h["nombre"] = "Pola";
+print(h, len(h));
