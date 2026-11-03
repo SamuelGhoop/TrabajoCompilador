@@ -1,0 +1,27 @@
+// Variables y asignación
+// Ejecutar: npm start -- examples/01_variables.ssg
+
+// let DECLARA una variable nueva.
+let nombre = "Kyra";
+let edad = 3;
+let esBoston = true;
+
+// Consultar una variable es escribir su nombre.
+print("nombre:", nombre);
+print("edad:", edad);
+print("es boston terrier:", esBoston);
+
+// Sin let, = CAMBIA una variable que ya existe.
+edad = edad + 1;
+print("edad después del cumpleaños:", edad);
+
+// La asignación devuelve el valor asignado, así que se puede encadenar:
+// a = b = 0 es a = (b = 0).
+let a = 5;
+let b = 5;
+a = b = 0;
+print("a y b:", a, b);
+
+// Volver a usar let con el mismo nombre declara la variable de nuevo.
+let edad = "tres";
+print("edad ahora es un texto:", edad, "de tipo", type(edad));
