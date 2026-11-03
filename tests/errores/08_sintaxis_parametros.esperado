@@ -1,4 +1,12 @@
 Error de sintaxis en línea 2, columna 23: se esperaba ), pero se encontró IDENT ("b")
+ 2 | let suma = function(a b) { a + b };
+   |                       ^
 Error de sintaxis en línea 2, columna 24: no se puede iniciar una expresión con ) (")")
+ 2 | let suma = function(a b) { a + b };
+   |                        ^
 Error de sintaxis en línea 2, columna 34: se esperaba :, pero se encontró } ("}")
+ 2 | let suma = function(a b) { a + b };
+   |                                  ^
 Error de sintaxis en línea 2, columna 34: no se puede iniciar una expresión con } ("}")
+ 2 | let suma = function(a b) { a + b };
+   |                                  ^

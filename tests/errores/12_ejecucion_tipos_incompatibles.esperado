@@ -1,1 +1,3 @@
 Error de ejecución en línea 3, columna 21: tipos incompatibles: STRING + INTEGER
+ 3 | print("Kyra tiene " + edad);
+   |                     ^

@@ -1,2 +1,4 @@
 4611686018427387904
 Error de ejecución en línea 4, columna 14: desbordamiento de entero
+ 4 | print(grande * 2);
+   |              ^

@@ -1,1 +1,3 @@
 Error léxico en línea 3, columna 20: carácter no reconocido '@'
+ 3 | let total = precio @ 2;
+   |                    ^

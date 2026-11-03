@@ -1,2 +1,4 @@
 null
 Error de ejecución en línea 4, columna 7: índice de arreglo fuera de rango: 10
+ 4 | a[10] = 4;
+   |       ^

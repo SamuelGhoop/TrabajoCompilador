@@ -1,2 +1,6 @@
 Error de sintaxis en línea 2, columna 5: se esperaba IDENT, pero se encontró = ("=")
+ 2 | let = 5;
+   |     ^
 Error de sintaxis en línea 2, columna 5: no se puede iniciar una expresión con = ("=")
+ 2 | let = 5;
+   |     ^

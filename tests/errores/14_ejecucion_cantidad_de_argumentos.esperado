@@ -1,1 +1,3 @@
 Error de ejecución en línea 3, columna 6: cantidad de argumentos incorrecta: se esperaban 1, llegaron 2
+ 3 | doble(1, 2);
+   |      ^

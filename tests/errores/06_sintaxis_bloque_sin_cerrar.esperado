@@ -1,1 +1,3 @@
 Error de sintaxis en línea 2, columna 21: bloque sin cerrar: falta '}' para la '{' de esta posición
+ 2 | let f = function(n) {
+   |                     ^
