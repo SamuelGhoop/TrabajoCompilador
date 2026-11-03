@@ -330,6 +330,14 @@ interface Hijo {
 //	    └── Valor: InfixExpression +
 //	        ├── Izquierda: IntegerLiteral 1
 //	        └── Derecha: IntegerLiteral 2
+// arbolComoTexto devuelve el dibujo del AST como texto (lo usa la interfaz
+// web para mostrar el mismo árbol que el modo parser del REPL).
+export function arbolComoTexto(nodo: ast.Node): string {
+	let texto = "";
+	imprimirArbol((t) => (texto += t), nodo, "", "");
+	return texto;
+}
+
 function imprimirArbol(escribir: (t: string) => void, nodo: ast.Node | null, etiqueta: string, prefijo: string): void {
 	// Se imprime el propio nodo (el prefijo y la rama ya los escribió el padre).
 	let [descripcion, hijos] = describirNodo(nodo);
