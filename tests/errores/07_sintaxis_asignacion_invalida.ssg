@@ -1,0 +1,3 @@
+// Error de sintaxis: solo se puede asignar a variables o posiciones.
+let a = 1;
+5 = a;
