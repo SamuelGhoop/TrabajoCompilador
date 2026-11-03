@@ -67,8 +67,9 @@ código ──▶ Lexer ──tokens──▶ Parser ──AST──▶ Evaluado
 | `evaluator/` | Recorre el AST con una **tabla de evaluadores** (clase de nodo → función) y las funciones integradas. Reporta los **errores de ejecución**. |
 | `interprete.ts` | Une las tres etapas: si hay errores léxicos o de sintaxis, no ejecuta nada. |
 | `repl/`, `main.ts` | Entrada: REPL (modos lexer, parser y evaluator; `:cargar`) y ejecución de archivos `.ssg`. |
+| `web/`, `src/web/` | Interfaz web: el navegador manda el código a un servidor local que lo ejecuta con el mismo intérprete y devuelve tokens, AST, salida y traza. |
 
-**Entrada.** Están las dos modalidades: `npm start` abre el REPL, que procesa una línea a la vez y conserva las variables; `npm start -- programa.ssg` ejecuta un archivo completo, donde las funciones y los bloques pueden ocupar varias líneas. El intérprete corre en un *worker thread* con pila de 256 MB (ver §3).
+**Entrada.** Están las dos modalidades (y además una interfaz web, `npm run ui`): `npm start` abre el REPL, que procesa una línea a la vez y conserva las variables; `npm start -- programa.ssg` ejecuta un archivo completo, donde las funciones y los bloques pueden ocupar varias líneas. El intérprete corre en un *worker thread* con pila de 256 MB (ver §3).
 
 **Errores.** Cada etapa reporta los suyos con la línea y la columna: `Error léxico en línea 3, columna 20: carácter no reconocido '@'`, `Error de sintaxis en …`, `Error de ejecución en …`. El lexer y el parser no se detienen en el primer error: siguen para reportarlos todos. Un error de ejecución es un valor (`ErrorObj`) que sube por el árbol igual que un `return` y detiene el programa; el evaluador le pone la posición del token del nodo que lo produjo.
 
@@ -99,6 +100,6 @@ código ──▶ Lexer ──tokens──▶ Parser ──AST──▶ Evaluado
 Usamos **Claude Code** (asistente de programación de Anthropic) para: traducir de Go a TypeScript el lexer, el AST, el parser y el REPL del proyecto base; escribir el evaluador y las funciones integradas; agregar los operadores lógicos, la posición de los errores y la ejecución de archivos; escribir los ejemplos, las pruebas y la documentación; y encontrar y corregir el problema de rendimiento y el de la pila.
 
 Cómo verificamos que el código fuera correcto:
-- **Pruebas automáticas** (`npm test`, 92 casos): pruebas unitarias de cada etapa, más 32 programas en `tests/` con su salida esperada. Cada salida esperada se revisó a mano antes de guardarla.
+- **Pruebas automáticas** (`npm test`, 95 casos): pruebas unitarias de cada etapa, más 32 programas en `tests/` con su salida esperada. Cada salida esperada se revisó a mano antes de guardarla.
 - **Comparación con el proyecto del profesor:** el programa `examples/programa.ssg` (Ackermann, Fibonacci y Hanói) da el mismo resultado que indica su README, y los mensajes de error y las reglas del lenguaje se tomaron de su código.
 - **Revisión del código:** _(COMPLETAR antes de entregar: cómo revisó cada integrante el código, por ejemplo qué módulos leyó y qué probó en el REPL.)_
