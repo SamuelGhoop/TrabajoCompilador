@@ -1,0 +1,6 @@
+// Error de sintaxis: un bloque que nunca se cierra.
+let f = function(n) {
+    if (n > 0) {
+        return n;
+    
+};
