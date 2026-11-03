@@ -1,0 +1,61 @@
+// Versión en parce de examples/06_ambitos.ssg (generada con: npm run parce).
+// Ámbitos: variables globales y locales, y variables con el mismo nombre en
+// distintos ámbitos.
+// Ejecutar: npm start -- examples/parce/06_ambitos.ssg
+//
+// Regla: cada LLAMADA a una función crea un ámbito local nuevo. Al buscar
+// una variable se mira primero en el ámbito local y luego hacia afuera,
+// hasta el global. Los bloques de pilas, dele y pa NO crean ámbitos.
+
+parce x = "global";
+
+// 1. Un parámetro con el mismo nombre que una global la TAPA solo adentro.
+parce conParametro = vuelta(x) {
+    diga("  dentro (parámetro):", x);
+};
+conParametro("parámetro");
+diga("afuera sigue:", x);
+
+// 2. parce dentro de una función crea una variable LOCAL nueva.
+parce conLet = vuelta() {
+    parce x = "local";
+    diga("  dentro (let):", x);
+};
+conLet();
+diga("afuera sigue:", x);
+
+// 3. Sin parce, la asignación busca la variable hacia afuera y cambia la global.
+parce sinLet = vuelta() {
+    x = "cambiada desde la función";
+};
+sinLet();
+diga("afuera ahora:", x);
+
+// 4. Las variables locales no existen fuera de su función.
+parce contador = vuelta() {
+    parce soloAdentro = 1;
+    soloAdentro + 1
+};
+diga("contador() =", contador());
+// (Usar soloAdentro aquí daría: identificador no definido: soloAdentro)
+
+// 5. Cada llamada recursiva tiene su propio ámbito: la n de una llamada no
+//    pisa la n de otra.
+parce cuentaRegresiva = vuelta(n) {
+    pilas (n == 0) {
+        devuelva "¡despegue!";
+    }
+    parce resto = cuentaRegresiva(n - 1);
+    devuelva texto(n) + " " + resto;
+};
+diga(cuentaRegresiva(5));
+
+// 6. Una función ve las variables del lugar donde se DEFINIÓ, no de donde se
+//    llama.
+parce nivel = "global";
+parce mostrarNivel = vuelta() { nivel };
+parce llamarDesdeOtroAmbito = vuelta() {
+    parce nivel = "local de la llamadora";
+    mostrarNivel()
+};
+diga("mostrarNivel() ve:", llamarDesdeOtroAmbito());
