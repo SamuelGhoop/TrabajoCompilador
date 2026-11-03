@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KYRACOMPILER (TM) TERMLINK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   KYRACOMPILER (TM) TERMLINK — interfaz web del intérprete
+   Misma estética y sonidos que ROBCO TERMLINK (MiVault/Projects/Fallout):
+   CRT de fósforo verde, CERO border-radius, cambios de estado duros, audio
+   generado con osciladores (sin archivos).
+   El código NO se ejecuta en el navegador: se manda al servidor (npm run ui),
+   que usa el mismo intérprete del REPL en un hilo con pila de 256 MB.
+   ============================================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  border-radius: 0 !important;   /* regla no negociable de la estética CRT */
+}
+
+:root {
+  --bg:          #0A0F0A;
+  --phos:        #3CFF7A;
+  --phos-dim:    #1B6E38;
+  --phos-bright: #C7FFDC;
+  --red:         #FF4040;
+  --amber:       #FF9B26;
+  --glow: 0 0 4px currentColor, 0 0 12px rgba(60,255,122,.4);
+  --glow-red: 0 0 4px currentColor, 0 0 12px rgba(255,64,64,.45);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: #050705;
+  color: var(--phos);
+  font-family: "Share Tech Mono", ui-monospace, "Courier New", monospace;
+  overflow: hidden;
+  -webkit-font-smoothing: none;
+}
+
+/* ---------------------------------------------------------- MARCO / MONITOR */
+#monitor {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(6px, 2vmin, 26px);
+  background: radial-gradient(120% 120% at 50% 0%, #1a1f1a 0%, #0b0d0b 60%, #050605 100%);
+}
+
+#bezel {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: min(100cqw, 133.3333cqh);
+  max-width: 100%;
+  padding: clamp(8px, 1.6vmin, 22px);
+  background: linear-gradient(180deg, #2b302b 0%, #141814 55%, #0c0f0c 100%);
+  border: 2px solid #3a423a;
+  box-shadow:
+    inset 0 0 0 2px #0a0c0a,
+    inset 0 2px 0 0 #4a524a,
+    0 0 0 3px #0a0c0a,
+    0 18px 60px rgba(0,0,0,.9);
+}
+
+#led {
+  position: absolute;
+  right: clamp(10px, 1.8vmin, 26px);
+  bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #6a705f;
+  text-transform: uppercase;
+  user-select: none;
+}
+#led i {
+  width: 7px; height: 7px;
+  background: var(--amber);
+  box-shadow: 0 0 6px var(--amber), 0 0 14px rgba(255,155,38,.6);
+  animation: ledPulse 3.4s steps(1, end) infinite;
+}
+#led.busy i { animation: ledBusy .16s steps(1, end) infinite; }
+@keyframes ledPulse { 0%,88% { opacity: 1 } 89%,100% { opacity: .55 } }
+@keyframes ledBusy  { 0%,49% { opacity: 1 } 50%,100% { opacity: .25 } }
+
+/* ------------------------------------------------------------------ PANTALLA */
+@supports (container-type: size) {
+  #screen  { container-type: size; }
+  #content { font-size: clamp(8px, 2.45cqh, 34px); }
+}
+
+#screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  transform: perspective(1400px) rotateX(.45deg);
+  box-shadow:
+    inset 0 0 90px rgba(60,255,122,.05),
+    inset 0 0 240px rgba(0,0,0,.75);
+}
+
+#content {
+  position: absolute;
+  inset: 0;
+  padding: clamp(8px, 1.6vmin, 22px);
+  font-size: clamp(9px, min(1.6vw, 2.1vh), 26px);
+  line-height: 1.4;
+  text-shadow: var(--glow);
+}
+
+.view   { height: 100%; }
+.hidden { display: none !important; }
+
+/* ------------------------------------------------------------ CAPAS DE EFECTO */
+.fx { position: absolute; inset: 0; pointer-events: none; }
+#fxScan {
+  z-index: 60;
+  background: repeating-linear-gradient(to bottom,
+    rgba(0,0,0,.34) 0px, rgba(0,0,0,.34) 1px,
+    rgba(0,0,0,0)   1px, rgba(0,0,0,0)   2px);
+}
+#fxRoll {
+  z-index: 61;
+  background: linear-gradient(to bottom,
+    rgba(60,255,122,0) 0%, rgba(60,255,122,.055) 45%,
+    rgba(190,255,215,.10) 50%, rgba(60,255,122,.055) 55%, rgba(60,255,122,0) 100%);
+  height: 22%;
+  inset: auto 0 auto 0;
+  animation: rollDown 8s linear infinite;
+}
+@keyframes rollDown { from { top: -25% } to { top: 105% } }
+#fxVig {
+  z-index: 62;
+  background: radial-gradient(120% 105% at 50% 50%,
+    rgba(0,0,0,0) 40%, rgba(0,0,0,.35) 78%, rgba(0,0,0,.85) 100%);
+}
+#fxStatic { z-index: 70; opacity: 0; background-size: 128px 128px; mix-blend-mode: screen; }
+#fxStatic.on { opacity: .5; }
+#fxRed   { z-index: 71; background: var(--red); opacity: 0; }
+#fxRed.on { opacity: .22; }
+#fxWhite { z-index: 72; background: #fff; opacity: 0; }
+#fxWhite.soft { opacity: .30; }
+#powerOn { z-index: 95; background: #000; display: none; }
+#poLine {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: #fff;
+  box-shadow: 0 0 26px 6px rgba(255,255,255,.75);
+}
+#screen.flicker { filter: brightness(1.28) contrast(1.05); }
+#content.shake { animation: shake 200ms steps(2, end) 1; }
+@keyframes shake {
+  0%   { transform: translate(0,0) }
+  25%  { transform: translate(-4px, 2px) }
+  50%  { transform: translate(3px,-3px) }
+  75%  { transform: translate(-3px,-1px) }
+  100% { transform: translate(0,0) }
+}
+
+.cur { animation: hardblink .5s steps(1, end) infinite; }
+@keyframes hardblink {
+  0%,49.99% { color: var(--phos);        opacity: 1 }
+  50%,100%  { color: var(--phos-bright); opacity: .35 }
+}
+
+/* --------------------------------------------------------------- BOOT SCREEN */
+#boot { display: flex; flex-direction: column; height: 100%; letter-spacing: .2em; }
+#bootText { white-space: pre-wrap; text-transform: uppercase; }
+#bootBar  { margin-top: .6em; letter-spacing: 0; }
+#bootReady { margin-top: .3em; }
+#bootHint {
+  margin-top: auto;
+  font-size: .82em;
+  color: var(--phos-dim);
+  text-shadow: none;
+  text-transform: uppercase;
+}
+
+/* -------------------------------------------------------------- TERMINAL */
+#term { display: flex; flex-direction: column; height: 100%; }
+#head { flex: 0 0 auto; letter-spacing: .2em; text-transform: uppercase; }
+#head .sub { color: var(--phos-dim); text-shadow: none; font-size: .82em; }
+#status { white-space: pre; }
+#status.err  { color: var(--red); text-shadow: var(--glow-red); }
+#status.busy { color: var(--amber); }
+
+#panels {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0 1.4em;
+  min-height: 0;
+  margin-top: .45em;
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid rgba(60,255,122,.28);
+}
+.ptitle {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0 .8em;
+  padding: .1em .5em;
+  border-bottom: 1px solid rgba(60,255,122,.28);
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  font-size: .85em;
+  color: var(--phos-dim);
+  text-shadow: none;
+}
+
+/* --- editor con números de línea --- */
+#editorWrap { position: relative; flex: 1 1 auto; display: flex; min-height: 0; }
+#gutter {
+  flex: 0 0 auto;
+  padding: .35em .45em .35em .3em;
+  text-align: right;
+  color: var(--phos-dim);
+  text-shadow: none;
+  white-space: pre;
+  overflow: hidden;
+  user-select: none;
+  border-right: 1px solid rgba(60,255,122,.18);
+  font-size: .9em;
+  line-height: 1.4;
+}
+#gutter .bad { color: #000; background: var(--red); }
+#editor {
+  flex: 1 1 auto;
+  min-width: 0;
+  resize: none;
+  border: 0;
+  outline: none;
+  padding: .35em .5em;
+  background: transparent;
+  color: var(--phos);
+  caret-color: var(--phos-bright);
+  font: inherit;
+  font-size: .9em;
+  line-height: 1.4;
+  letter-spacing: .02em;
+  text-shadow: var(--glow);
+  white-space: pre;
+  overflow: auto;
+  tab-size: 4;
+}
+#editor::selection { background: var(--phos); color: #000; text-shadow: none; }
+#editor::-webkit-scrollbar, .out::-webkit-scrollbar { width: 8px; height: 8px; }
+#editor::-webkit-scrollbar-thumb, .out::-webkit-scrollbar-thumb { background: var(--phos-dim); }
+#editor::-webkit-scrollbar-track, .out::-webkit-scrollbar-track { background: transparent; }
+
+/* --- pestañas y salida --- */
+.tab {
+  font: inherit; letter-spacing: inherit; text-transform: uppercase;
+  background: transparent; border: 0; padding: 0 .3em; margin: 0;
+  color: var(--phos-dim); cursor: pointer; text-shadow: none;
+}
+.tab.on { background: var(--phos); color: #000; }
+.tab:hover:not(.on), .tab:focus-visible:not(.on) { color: var(--phos); outline: none; text-shadow: var(--glow); }
+.out {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: .35em .5em;
+  overflow: auto;
+  white-space: pre;
+  font: inherit;
+  font-size: .9em;
+  line-height: 1.4;
+  letter-spacing: .02em;
+}
+.out .err  { color: var(--red); text-shadow: var(--glow-red); }
+.out .val  { color: var(--phos-bright); }
+.out .dim  { color: var(--phos-dim); text-shadow: none; }
+.out .kyra { color: var(--amber); text-shadow: 0 0 4px currentColor; }
+.out .fresh { color: var(--phos-bright); text-shadow: 0 0 8px currentColor, 0 0 22px rgba(60,255,122,.85); }
+.out .tk-t { color: var(--phos-bright); }
+.out .tk-bad { color: var(--red); text-shadow: var(--glow-red); }
+
+/* ------------------------------------------------------------------- HUD */
+#hud {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .15em 1.2ch;
+  align-items: center;
+  margin-top: .45em;
+  padding-top: .3em;
+  border-top: 1px solid rgba(60,255,122,.22);
+  font-size: .85em;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--phos-dim);
+  text-shadow: none;
+}
+.btn {
+  font: inherit; letter-spacing: inherit; text-transform: uppercase;
+  background: transparent; border: 0; padding: 0 .2ch; margin: 0;
+  color: var(--phos); cursor: pointer; text-shadow: var(--glow);
+}
+.btn.muted { color: var(--phos-dim); text-shadow: none; opacity: .6; }
+.btn:disabled { color: var(--phos-dim); text-shadow: none; opacity: .4; cursor: default; }
+.btn.waiting { color: var(--amber); animation: amberblink .5s steps(1, end) infinite; }
+@keyframes amberblink { 0%,49.99% { opacity: 1 } 50%,100% { opacity: .3 } }
+.btn:hover:not(:disabled), .btn:focus-visible:not(:disabled) {
+  background: var(--phos); color: #000; outline: none; text-shadow: none;
+}
+#hudRight { margin-left: auto; display: flex; flex-wrap: wrap; gap: 0 1.2ch; }
+#ejemplos {
+  font: inherit; letter-spacing: inherit; text-transform: uppercase;
+  background: var(--bg); color: var(--phos); border: 1px solid var(--phos-dim);
+  padding: 0 .3ch; cursor: pointer; text-shadow: var(--glow); max-width: 16em;
+}
+#ejemplos:focus-visible { outline: 1px solid var(--phos); }
+#ejemplos option { background: var(--bg); color: var(--phos); }
+
+/* ---------------------------------------------------------------- AYUDA */
+#help {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: rgba(6,12,7,.97);
+  padding: clamp(10px, 3vmin, 40px);
+  overflow: auto;
+  text-shadow: var(--glow);
+  letter-spacing: .08em;
+  font-size: clamp(8px, 2.2cqh, 30px);
+}
+#help h2 { margin: 0 0 .6em; font-size: 1.15em; font-weight: normal; text-transform: uppercase; }
+#help h3 { margin: 1em 0 .2em; font-size: 1em; font-weight: normal; color: var(--phos-bright); text-transform: uppercase; }
+#help p, #help li { margin: .15em 0; }
+#help ul { margin: 0; padding-left: 2ch; list-style: none; }
+#help li::before { content: "> "; color: var(--phos-dim); }
+#help .k { background: var(--phos); color: #000; text-shadow: none; padding: 0 .4ch; }
+#help code { color: var(--phos-bright); }
+#help .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 3ch; }
+
+/* -------------------------------------------------------------- RESPONSIVE */
+@media (max-width: 760px) {
+  #bezel { aspect-ratio: auto; width: 100%; height: 100%; }
+  #screen { container-type: normal; }
+  #content { font-size: clamp(9px, 3.1vw, 15px); }
+  #panels { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; gap: .6em 0; }
+  #hudRight { margin-left: 0; }
+  #help .cols { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #fxRoll { display: none; }
+  #screen.flicker { filter: none; }
+  #content.shake { animation: none; }
+  .cur, #led i, .btn.waiting { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="monitor">
+  <div id="bezel">
+    <div id="screen">
+      <div id="content">
+
+        <!-- ============================ BOOT ============================ -->
+        <div id="boot" class="view">
+          <div><span id="bootText"></span><span class="cur">▮</span></div>
+          <div id="bootBar"></div>
+          <div id="bootReady"></div>
+          <div id="bootHint">[ CLIC O CUALQUIER TECLA PARA SALTAR &nbsp;·&nbsp; UN CLIC TAMBIÉN ACTIVA EL SONIDO ]</div>
+        </div>
+
+        <!-- ========================== TERMINAL ========================== -->
+        <div id="term" class="view hidden">
+          <div id="head">
+            <div>KYRACOMPILER (TM) TERMLINK PROTOCOL</div>
+            <div class="sub">UNIVERSIDAD EIA · COMPILADORES · LEXER → PARSER → EVALUADOR</div>
+            <div id="status">&gt; LISTO. ESCRIBA UN PROGRAMA Y PULSE [EJECUTAR]<span class="cur">▮</span></div>
+          </div>
+
+          <div id="panels">
+            <section class="panel" aria-label="Editor de código">
+              <div class="ptitle"><span>PROGRAMA.SSG</span><span id="posCursor">L1 C1</span></div>
+              <div id="editorWrap">
+                <div id="gutter" aria-hidden="true">1</div>
+                <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
+                          aria-label="Código del programa"></textarea>
+              </div>
+            </section>
+
+            <section class="panel" aria-label="Resultado">
+              <div class="ptitle" role="tablist">
+                <button class="tab on" data-tab="salida" role="tab">[SALIDA]</button>
+                <button class="tab" data-tab="tokens" role="tab">[TOKENS]</button>
+                <button class="tab" data-tab="ast" role="tab">[AST]</button>
+                <button class="tab" data-tab="traza" role="tab">[TRAZA]</button>
+              </div>
+              <pre class="out" id="out" aria-live="polite"></pre>
+            </section>
+          </div>
+
+          <div id="hud">
+            <button class="btn" id="btnRun" title="Ejecutar (Ctrl+Enter)">[▶ EJECUTAR]</button>
+            <button class="btn" id="btnStop" title="Detener (Esc)" disabled>[■ DETENER]</button>
+            <select id="ejemplos" title="Cargar un ejemplo"><option value="">EJEMPLOS…</option></select>
+            <span id="hudRight">
+              <button class="btn" id="btnClear" title="Limpiar el editor">[LIMPIAR]</button>
+              <button class="btn" id="btnHelp" title="Ayuda (F1)">[?]</button>
+              <button class="btn" id="btnMute" title="Sonido">[SND ON]</button>
+              <button class="btn" id="btnBoot" title="Volver a encender">[REBOOT]</button>
+            </span>
+          </div>
+        </div>
+
+      </div><!-- /#content -->
+
+      <!-- ========================= AYUDA ========================= -->
+      <div id="help" class="hidden">
+        <h2>KYRACOMPILER — MANUAL DEL OPERADOR</h2>
+        <div class="cols">
+          <div>
+            <h3>Cómo se usa</h3>
+            <ul>
+              <li>Escriba un programa a la izquierda (puede ocupar varias líneas).</li>
+              <li><span class="k">CTRL+ENTER</span> o [▶ EJECUTAR] lo corre.</li>
+              <li><span class="k">ESC</span> o [■ DETENER] lo frena (ciclo infinito).</li>
+              <li>[SALIDA] lo que escribe <code>print</code> y el valor final.</li>
+              <li>[TOKENS] lo que produce el lexer.</li>
+              <li>[AST] el árbol que arma el parser.</li>
+              <li>[TRAZA] el árbol de llamadas a funciones.</li>
+              <li>[EJEMPLOS…] carga los programas de <code>examples/</code>.</li>
+            </ul>
+            <h3>Errores</h3>
+            <ul>
+              <li>Cada error dice su etapa (léxica, de sintaxis o de ejecución), la línea y la columna, y la marca con <code>^</code>.</li>
+              <li>La línea del error se marca en rojo junto al editor.</li>
+            </ul>
+          </div>
+          <div>
+            <h3>El lenguaje (inglés · español · parce)</h3>
+            <ul>
+              <li><code>let</code> · <code>sea</code> · <code>parce</code> &nbsp;x = 5;</li>
+              <li><code>function</code> · <code>funcion</code> · <code>vuelta</code></li>
+              <li><code>return</code> · <code>retorna</code> · <code>devuelva</code></li>
+              <li><code>if/elif/else</code> · <code>si/sinosi/sino</code> · <code>pilas/osea/deResto</code></li>
+              <li><code>while</code> · <code>mientras</code> · <code>dele</code> &nbsp; <code>for</code> · <code>para</code> · <code>pa</code></li>
+              <li><code>true/false</code> · <code>verdadero/falso</code> · <code>deUna/paila</code></li>
+              <li><code>print</code> · <code>imprimir</code> · <code>diga</code> &nbsp; <code>len</code> · <code>longitud</code> · <code>cuantos</code></li>
+              <li>Operadores: <code>+ - * / % ** == != &lt; &gt; &lt;= &gt;= &amp;&amp; || !</code></li>
+              <li>Comentarios: <code>// hasta el final de la línea</code></li>
+            </ul>
+          </div>
+        </div>
+        <p>&nbsp;</p>
+        <p><button class="btn" id="btnHelpClose">[ CERRAR ]</button></p>
+      </div>
+
+      <!-- capas de efecto, siempre encima -->
+      <div class="fx" id="fxStatic"></div>
+      <div class="fx" id="fxRed"></div>
+      <div class="fx" id="fxWhite"></div>
+      <div class="fx" id="fxRoll"></div>
+      <div class="fx" id="fxScan"></div>
+      <div class="fx" id="fxVig"></div>
+      <div class="fx" id="powerOn"><div id="poLine"></div></div>
+
+    </div><!-- /#screen -->
+    <div id="led"><i></i>POWER</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================================
+ * 1. UTILIDADES
+ * ==========================================================================*/
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const REDUCE = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function lsGet(k, def) { try { const v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); } catch (e) { return def; } }
+function lsSet(k, v)   { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+const el = {};
+["content","screen","led","boot","bootText","bootBar","bootReady","term","status","editor","gutter",
+ "posCursor","out","btnRun","btnStop","ejemplos","btnClear","btnHelp","btnMute","btnBoot","help",
+ "btnHelpClose","fxStatic","fxRed","fxWhite","powerOn","poLine"].forEach(id => el[id] = $(id));
+
+/* ============================================================================
+ * 2. AUDIO — Web Audio API, todo generado por osciladores (sin archivos).
+ *    Mismo motor que ROBCO TERMLINK.
+ * ==========================================================================*/
+const VOLUMEN = 0.35;
+const SFX = {
+  ctx: null, master: null, muted: lsGet("kyra_muted", false),
+
+  ensure() {
+    if (this.ctx) return true;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.muted ? 0.0001 : VOLUMEN;
+      this.master.connect(this.ctx.destination);
+    } catch (e) { return false; }
+    return true;
+  },
+  resume() {
+    try { if (this.ctx && this.ctx.state === "suspended") this.ctx.resume().then(renderMute).catch(() => {}); } catch (e) {}
+  },
+  /* Un beep: oscilador + envolvente exponencial. slideTo hace glissando. */
+  blip(freq, dur, type, vol, slideTo, delay) {
+    if (this.muted || !this.ctx || this.ctx.state !== "running") return;
+    try {
+      const t0 = this.ctx.currentTime + (delay || 0);
+      const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+      o.type = type || "square";
+      o.frequency.setValueAtTime(freq, t0);
+      if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol || 0.22), t0 + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(this.master);
+      o.start(t0); o.stop(t0 + dur + 0.03);
+    } catch (e) {}
+  },
+  key()     { this.blip(1200, 0.025, "square", 0.10); },                // tecla al escribir
+  type()    { this.blip(800 + Math.random() * 90, 0.03, "square", 0.12); },
+  confirm() { this.blip(880, 0.05, "square", 0.20); this.blip(1320, 0.06, "square", 0.17, null, 0.055); },
+  error()   { this.blip(220, 0.45, "sawtooth", 0.26, 55); },            // grave descendente
+  win()     { [523, 659, 784, 1046].forEach((f, i) => this.blip(f, 0.15, "square", 0.18, null, i * 0.08)); },
+  deny()    { this.blip(140, 0.08, "square", 0.12); },
+  power()   { this.blip(70, 0.55, "sine", 0.30, 190); },
+  load()    { this.blip(1500, 0.018, "square", 0.07); },
+  block()   { this.blip(700, 0.03, "square", 0.10); },
+  bark()    { this.blip(520, 0.09, "sawtooth", 0.22, 300); this.blip(560, 0.11, "sawtooth", 0.22, 280, 0.16); }, // ¡guau guau!
+
+  setMuted(m) {
+    this.muted = m; lsSet("kyra_muted", m);
+    if (this.ctx && this.master) {
+      const t = this.ctx.currentTime;
+      this.master.gain.cancelScheduledValues(t);
+      this.master.gain.setValueAtTime(m ? 0.0001 : VOLUMEN, t);
+    }
+  }
+};
+/* El AudioContext nace solo dentro de un gesto real del usuario. */
+function enableAudio() {
+  const primero = !SFX.ctx;
+  if (!SFX.ensure()) return;
+  SFX.resume();
+  renderMute();
+  if (primero && !SFX.muted) SFX.confirm();
+}
+["pointerdown", "keydown", "touchstart"].forEach(ev =>
+  window.addEventListener(ev, enableAudio, { passive: true, capture: true }));
+
+function renderMute() {
+  const b = el.btnMute;
+  b.classList.remove("muted", "waiting");
+  if (SFX.muted) { b.textContent = "[SND OFF]"; b.classList.add("muted"); }
+  else if (!SFX.ctx || SFX.ctx.state !== "running") { b.textContent = "[SND: CLIC]"; b.classList.add("waiting"); }
+  else b.textContent = "[SND ON]";
+}
+
+/* ============================================================================
+ * 3. EFECTOS DE PANTALLA (estática, destellos, sacudida, flicker)
+ * ==========================================================================*/
+(function makeStatic() {
+  try {
+    const c = document.createElement("canvas");
+    c.width = c.height = 64;
+    const x = c.getContext("2d");
+    const d = x.createImageData(64, 64);
+    for (let i = 0; i < d.data.length; i += 4) {
+      const v = (Math.random() * 255) | 0;
+      d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255;
+    }
+    x.putImageData(d, 0, 0);
+    el.fxStatic.style.backgroundImage = "url(" + c.toDataURL() + ")";
+  } catch (e) {}
+})();
+
+function flash(node, cls, ms) { node.classList.add(cls); setTimeout(() => node.classList.remove(cls), ms); }
+
+function errorFx() {
+  SFX.error();
+  if (REDUCE) return;
+  el.content.classList.remove("shake");
+  void el.content.offsetWidth;
+  el.content.classList.add("shake");
+  setTimeout(() => el.content.classList.remove("shake"), 220);
+  flash(el.fxRed, "on", 130);
+  flash(el.fxStatic, "on", 60);
+}
+
+(function flickerLoop() {
+  if (REDUCE) return;
+  setTimeout(() => {
+    el.screen.classList.add("flicker");
+    setTimeout(() => el.screen.classList.remove("flicker"), 60);
+    flickerLoop();
+  }, 3000 + Math.random() * 5000);
+})();
+
+/* ============================================================================
+ * 4. SECUENCIA DE BOOT — encendido CRT, texto con beeps, barra de bloques.
+ *    Siempre saltable; rápida desde la segunda visita.
+ * ==========================================================================*/
+const BOOT_LINES = [
+  "************** POR FAVOR ESPERE **************",
+  "",
+  "KYRA INDUSTRIES UNIFIED COMPILER SYSTEM",
+  "COPYRIGHT 2026 UNIVERSIDAD EIA",
+  "-COMPILADORES-",
+  "",
+  "INICIALIZANDO LEXER..................... OK",
+  "CARGANDO PARSER DE PRATT................ OK",
+  "CALENTANDO EL EVALUADOR (PILA 256 MB)... OK",
+  "DESPERTANDO A KYRA...................... ¡GUAU!"
+];
+const BOOT_BLOCKS = 15;
+let bootSkipped = false;
+
+async function runBoot(forceFull) {
+  if (REDUCE) { el.boot.classList.add("hidden"); return; }
+  const rapido = lsGet("kyra_booted", false) && !forceFull;
+  const charMs = rapido ? 2 : 16, blockMs = rapido ? 12 : 55;
+
+  bootSkipped = false;
+  el.bootText.textContent = ""; el.bootBar.textContent = ""; el.bootReady.textContent = "";
+  el.boot.classList.remove("hidden"); el.term.classList.add("hidden");
+  el.boot.style.opacity = "1";
+  const saltar = () => { bootSkipped = true; };
+  window.addEventListener("keydown", saltar); window.addEventListener("pointerdown", saltar);
+  const bwait = async ms => { if (!bootSkipped) await sleep(ms); };
+
+  /* encendido CRT: línea blanca que se expande verticalmente */
+  el.powerOn.style.display = "block"; el.powerOn.style.background = "#000";
+  el.poLine.style.transition = "none"; el.poLine.style.height = "2px"; el.poLine.style.opacity = "1";
+  SFX.power();
+  await bwait(60);
+  el.poLine.style.transition = "height 350ms cubic-bezier(.2,.9,.2,1)";
+  el.poLine.style.height = "100%";
+  await bwait(300);
+  flash(el.fxWhite, "soft", 90);
+  await bwait(70);
+  el.powerOn.style.background = "transparent";
+  el.poLine.style.transition = "opacity 190ms linear"; el.poLine.style.opacity = "0";
+  await bwait(200);
+  el.powerOn.style.display = "none";
+
+  /* texto carácter por carácter con beeps de carga */
+  for (let i = 0; i < BOOT_LINES.length; i++) {
+    const linea = BOOT_LINES[i];
+    for (let j = 0; j < linea.length; j++) {
+      if (bootSkipped) { el.bootText.textContent += linea.slice(j); break; }
+      el.bootText.textContent += linea[j];
+      if (linea[j] !== " " && Math.random() < 0.3) SFX.load();
+      await sleep(charMs);
+    }
+    el.bootText.textContent += "\n";
+    if (bootSkipped) { el.bootText.textContent += BOOT_LINES.slice(i + 1).join("\n"); break; }
+    if (linea.endsWith("¡GUAU!")) SFX.bark();
+  }
+
+  /* barra de progreso: bloques discretos */
+  for (let b = 0; b <= BOOT_BLOCKS; b++) {
+    el.bootBar.textContent = "[" + "■".repeat(b) + "□".repeat(BOOT_BLOCKS - b) + "]";
+    if (b > 0) SFX.block();
+    if (bootSkipped) { el.bootBar.textContent = "[" + "■".repeat(BOOT_BLOCKS) + "]"; break; }
+    await sleep(blockMs);
+  }
+  el.bootReady.textContent = ">LISTO";
+  await bwait(rapido ? 150 : 600);
+
+  window.removeEventListener("keydown", saltar); window.removeEventListener("pointerdown", saltar);
+  el.boot.style.transition = "opacity 180ms linear"; el.boot.style.opacity = "0";
+  await sleep(180);
+  el.boot.classList.add("hidden"); el.boot.style.transition = "";
+  lsSet("kyra_booted", true);
+}
+
+/* ============================================================================
+ * 5. EDITOR — números de línea, posición del cursor, Tab, sonido al teclear
+ * ==========================================================================*/
+const PROGRAMA_INICIAL = `// ¡Quiubo! Escriba aquí su programa y pulse Ctrl+Enter.
+// Se puede escribir en inglés, en español o en parce.
+
+parce saludar = vuelta(quien) {
+    devuelva "¡Quiubo, " + quien + "!";
+};
+diga(saludar("parcero"));
+
+let factorial = function(n) {
+    if (n <= 1) { return 1; }
+    return n * factorial(n - 1);
+};
+diga("factorial de 10:", factorial(10));
+
+// Recursión profunda: sin el límite de la pila del navegador.
+let contar = function(n) { pilas (n == 0) { devuelva 0; } devuelva 1 + contar(n - 1); };
+diga("recursión de", contar(50000), "llamadas");
+
+// Pruebe la pestaña [TRAZA] con esto:
+let fib = function(n) { if (n < 2) { return n; } return fib(n - 1) + fib(n - 2); };
+fib(5)
+`;
+
+let lineaConError = null;
+
+function renderGutter() {
+  const n = el.editor.value.split("\n").length;
+  let html = "";
+  for (let i = 1; i <= n; i++) {
+    html += (i === lineaConError ? '<span class="bad">' + i + "</span>" : i) + (i < n ? "\n" : "");
+  }
+  el.gutter.innerHTML = html;
+  el.gutter.scrollTop = el.editor.scrollTop;
+}
+
+function renderPos() {
+  const antes = el.editor.value.slice(0, el.editor.selectionStart).split("\n");
+  el.posCursor.textContent = "L" + antes.length + " C" + (antes[antes.length - 1].length + 1);
+}
+
+let ultimoKey = 0;
+el.editor.addEventListener("input", () => {
+  lineaConError = null;
+  renderGutter(); renderPos();
+  lsSet("kyra_codigo", el.editor.value);
+  const ahora = performance.now();
+  if (ahora - ultimoKey > 35) { SFX.key(); ultimoKey = ahora; }
+});
+el.editor.addEventListener("scroll", () => { el.gutter.scrollTop = el.editor.scrollTop; });
+["keyup", "click"].forEach(ev => el.editor.addEventListener(ev, renderPos));
+el.editor.addEventListener("keydown", e => {
+  if (e.key === "Tab" && !e.ctrlKey && !e.altKey) {            // Tab inserta 4 espacios
+    e.preventDefault();
+    el.editor.setRangeText("    ", el.editor.selectionStart, el.editor.selectionEnd, "end");
+    el.editor.dispatchEvent(new Event("input"));
+  }
+});
+
+/* ============================================================================
+ * 6. EJECUCIÓN — se manda el código al servidor y se muestran sus 4 vistas
+ * ==========================================================================*/
+let tabActual = "salida";
+let ultima = null;          // última respuesta del servidor
+let enCurso = null;         // AbortController del pedido en curso
+let pedidoTraza = false;    // si la última respuesta trae traza
+
+const KYRA = {
+  lexico:    [" |\\_._/|   ¡UY, PARCE! KYRA NO RECONOCE ALGO QUE ESCRIBISTE:", " ( O|o )"],
+  sintaxis:  [" |\\_._/|   ¡QUÉ BOLETA! KYRA NO ENTIENDE CÓMO ESTÁ ARMADO EL CÓDIGO:", " ( -|- )"],
+  ejecucion: [" |\\_._/|   ¡PAILA! KYRA SE TROPEZÓ AL EJECUTAR:", " ( x|x )"],
+};
+
+function setStatus(texto, clase) {
+  el.status.className = clase || "";
+  el.status.innerHTML = "";
+  el.status.append(document.createTextNode("> " + texto));
+  const c = document.createElement("span"); c.className = "cur"; c.textContent = "▮";
+  el.status.append(c);
+}
+
+function setBusy(b) {
+  el.btnRun.disabled = b;
+  el.btnStop.disabled = !b;
+  el.led.classList.toggle("busy", b);
+}
+
+async function ejecutar(conTraza) {
+  if (enCurso) return;
+  const codigo = el.editor.value;
+  enCurso = new AbortController();
+  setBusy(true);
+  setStatus(conTraza ? "TRAZANDO LLAMADAS..." : "EJECUTANDO...", "busy");
+  SFX.confirm();
+  const t0 = performance.now();
+  try {
+    const r = await fetch("/api/ejecutar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ codigo, traza: conTraza }),
+      signal: enCurso.signal,
+    });
+    if (!r.ok) throw new Error(await r.text());
+    ultima = await r.json();
+    pedidoTraza = conTraza;
+    const ms = Math.round(performance.now() - t0);
+    lineaConError = lineaDelError(ultima.errores[0]);
+    renderGutter();
+    if (ultima.errores.length > 0) {
+      setStatus(ultima.errores.length + " ERROR(ES) · ETAPA: " + nombreEtapa(ultima.etapa) + " · " + ms + " MS", "err");
+      errorFx();
+    } else {
+      setStatus("PROGRAMA EJECUTADO SIN ERRORES · " + ms + " MS");
+      SFX.win();
+    }
+    mostrarTab(tabActual, true);
+  } catch (e) {
+    if (e.name === "AbortError") {
+      setStatus("EJECUCIÓN DETENIDA POR EL OPERADOR", "err");
+      SFX.deny();
+    } else {
+      setStatus("SIN CONEXIÓN CON EL INTÉRPRETE · ¿ESTÁ CORRIENDO npm run ui?", "err");
+      escribirSalida([{ t: String(e.message || e), c: "err" }], false);
+      errorFx();
+    }
+  } finally {
+    enCurso = null;
+    setBusy(false);
+  }
+}
+
+function detener() { if (enCurso) enCurso.abort(); }
+
+function nombreEtapa(e) {
+  return { lexico: "LÉXICA", sintaxis: "SINTAXIS", ejecucion: "EJECUCIÓN" }[e] || "—";
+}
+function lineaDelError(msg) {
+  const m = /en línea (\d+), columna \d+/.exec(msg || "");
+  return m ? Number(m[1]) : null;
+}
+
+/* ============================================================================
+ * 7. PESTAÑAS — salida, tokens, AST y traza de la última ejecución
+ * ==========================================================================*/
+function lineasSalida(r) {
+  const out = [];
+  if (r.salida) out.push({ t: r.salida.replace(/\n$/, "") });
+  if (r.errores.length > 0) {
+    const [frase, cara] = KYRA[r.etapa] || KYRA.ejecucion;
+    out.push({ t: frase, c: "kyra" }, { t: cara, c: "kyra" });
+    r.errores.forEach(e => out.push({ t: e, c: "err" }));
+  } else if (r.valor !== null) {
+    out.push({ t: "=> " + r.valor, c: "val" });
+  } else if (!r.salida) {
+    out.push({ t: "(el programa no imprimió nada)", c: "dim" });
+  }
+  return out;
+}
+
+function lineasTokens(r) {
+  if (r.tokens.length === 0) return [{ t: "(no hay tokens)", c: "dim" }];
+  const out = [{ t: "LÍN:COL   TIPO       LITERAL", c: "dim" }];
+  r.tokens.forEach(k => {
+    const pos = (k.linea + ":" + k.columna).padEnd(9);
+    const tipo = k.tipo.padEnd(10);
+    out.push({ t: pos + " " + tipo + " " + k.literal, c: k.tipo === "ILLEGAL" ? "tk-bad" : "" });
+  });
+  return out;
+}
+
+function lineasAst(r) {
+  if (r.arbol === null) {
+    return [{ t: "(el programa tiene errores léxicos o de sintaxis: no hay AST)", c: "dim" }]
+      .concat(r.errores.filter(e => !e.startsWith("Error de ejecución")).map(e => ({ t: e, c: "err" })));
+  }
+  return [{ t: "PROGRAMA:", c: "dim" }, { t: "  " + r.programa, c: "val" }, { t: "AST:", c: "dim" }, { t: r.arbol.replace(/\n$/, "") }];
+}
+
+function lineasTraza(r) {
+  const out = (r.traza || []).map((t, i, a) => ({ t, c: i === a.length - 1 ? "dim" : "" }));
+  if (r.errores.length > 0) out.push({ t: "" }, ...r.errores.map(e => ({ t: e, c: "err" })));
+  else if (r.valor !== null) out.push({ t: "=> " + r.valor, c: "val" });
+  return out;
+}
+
+function mostrarTab(tab, recienEjecutado) {
+  tabActual = tab;
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  if (!ultima) {
+    escribirSalida([{ t: "(todavía no se ha ejecutado nada: pulse [▶ EJECUTAR] o Ctrl+Enter)", c: "dim" }], false);
+    return;
+  }
+  if (tab === "traza" && !pedidoTraza) {     // la traza se pide aparte (cuesta más)
+    ejecutar(true);
+    return;
+  }
+  const lineas = { salida: lineasSalida, tokens: lineasTokens, ast: lineasAst, traza: lineasTraza }[tab](ultima);
+  escribirSalida(lineas, recienEjecutado);
+}
+
+/* Escribe las líneas en el panel. Recién ejecutado y si es corto, se "teclea"
+   rápido con sonido; si no, aparece de golpe con el destello de fósforo. */
+let escrituraId = 0;
+async function escribirSalida(lineas, animar) {
+  const id = ++escrituraId;
+  el.out.textContent = "";
+  el.out.scrollTop = 0;
+  const total = lineas.reduce((n, l) => n + l.t.length, 0);
+  const teclear = animar && !REDUCE && total < 1400;
+  for (const l of lineas) {
+    const span = document.createElement("span");
+    span.className = (l.c || "") + (animar ? " fresh" : "");
+    el.out.append(span, "\n");
+    if (teclear) {
+      for (let i = 0; i < l.t.length; i += 3) {
+        if (id !== escrituraId) return;          // otra escritura empezó: se abandona esta
+        span.textContent = l.t.slice(0, i + 3);
+        if (i % 6 === 0 && l.t[i] !== " ") SFX.type();
+        await sleep(4);
+      }
+    } else {
+      span.textContent = l.t;
+    }
+    if (animar) setTimeout(() => span.classList.remove("fresh"), 220);
+  }
+}
+
+/* ============================================================================
+ * 8. EJEMPLOS, AYUDA Y CONTROLES
+ * ==========================================================================*/
+async function cargarEjemplos() {
+  try {
+    const lista = await (await fetch("/api/ejemplos")).json();
+    lista.forEach(ej => {
+      const o = document.createElement("option");
+      o.value = ej.codigo; o.textContent = ej.nombre.replace(/\.ssg$/, "").replace(/_/g, " ");
+      el.ejemplos.append(o);
+    });
+  } catch (e) {}
+}
+el.ejemplos.addEventListener("change", () => {
+  if (!el.ejemplos.value) return;
+  el.editor.value = el.ejemplos.value;
+  el.ejemplos.selectedIndex = 0;
+  el.editor.scrollTop = 0;
+  lineaConError = null;
+  renderGutter(); renderPos(); lsSet("kyra_codigo", el.editor.value);
+  for (let i = 0; i < 5; i++) SFX.blip(1500, 0.018, "square", 0.07, null, i * 0.04);
+  setStatus("EJEMPLO CARGADO. PULSE [▶ EJECUTAR]");
+  el.editor.focus();
+});
+
+function toggleHelp(abrir) {
+  el.help.classList.toggle("hidden", !abrir);
+  SFX.block();
+  if (!abrir) el.editor.focus();
+}
+
+el.btnRun.addEventListener("click", () => ejecutar(tabActual === "traza"));
+el.btnStop.addEventListener("click", detener);
+el.btnClear.addEventListener("click", () => {
+  el.editor.value = ""; lineaConError = null; renderGutter(); renderPos();
+  lsSet("kyra_codigo", ""); SFX.deny(); el.editor.focus();
+});
+el.btnHelp.addEventListener("click", () => toggleHelp(true));
+el.btnHelpClose.addEventListener("click", () => toggleHelp(false));
+el.btnMute.addEventListener("click", () => { SFX.setMuted(!SFX.muted); renderMute(); if (!SFX.muted) SFX.confirm(); });
+el.btnBoot.addEventListener("click", async () => { await runBoot(true); arrancarTerminal(); });
+document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+  SFX.block();
+  mostrarTab(b.dataset.tab, false);
+}));
+
+window.addEventListener("keydown", e => {
+  if (el.term.classList.contains("hidden")) return;
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); ejecutar(tabActual === "traza"); }
+  else if (e.key === "Escape") {
+    if (!el.help.classList.contains("hidden")) toggleHelp(false);
+    else detener();
+  } else if (e.key === "F1") { e.preventDefault(); toggleHelp(el.help.classList.contains("hidden")); }
+});
+
+/* ============================================================================
+ * 9. ARRANQUE
+ * ==========================================================================*/
+function arrancarTerminal() {
+  el.term.classList.remove("hidden");
+  renderGutter(); renderPos(); renderMute();
+  mostrarTab(tabActual, false);
+  el.editor.focus();
+}
+
+(async function main() {
+  el.editor.value = lsGet("kyra_codigo", PROGRAMA_INICIAL) || PROGRAMA_INICIAL;
+  cargarEjemplos();
+  renderMute();
+  await runBoot(false);
+  arrancarTerminal();
+})();
+</script>
+</body>
+</html>
