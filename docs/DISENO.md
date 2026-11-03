@@ -100,6 +100,6 @@ código ──▶ Lexer ──tokens──▶ Parser ──AST──▶ Evaluado
 Usamos **Claude Code** (asistente de programación de Anthropic) para: traducir de Go a TypeScript el lexer, el AST, el parser y el REPL del proyecto base; escribir el evaluador y las funciones integradas; agregar los operadores lógicos, la posición de los errores y la ejecución de archivos; escribir los ejemplos, las pruebas y la documentación; y encontrar y corregir el problema de rendimiento y el de la pila.
 
 Cómo verificamos que el código fuera correcto:
-- **Pruebas automáticas** (`npm test`, 95 casos): pruebas unitarias de cada etapa, más 32 programas en `tests/` con su salida esperada. Cada salida esperada se revisó a mano antes de guardarla.
+- **Pruebas automáticas** (`npm test`, 106 casos): pruebas unitarias de cada etapa, más 32 programas en `tests/` con su salida esperada. Cada salida esperada se revisó a mano antes de guardarla.
 - **Comparación con el proyecto del profesor:** el programa `examples/programa.ssg` (Ackermann, Fibonacci y Hanói) da el mismo resultado que indica su README, y los mensajes de error y las reglas del lenguaje se tomaron de su código.
 - **Revisión del código:** _(COMPLETAR antes de entregar: cómo revisó cada integrante el código, por ejemplo qué módulos leyó y qué probó en el REPL.)_
