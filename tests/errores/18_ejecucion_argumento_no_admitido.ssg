@@ -1,0 +1,2 @@
+// Error de ejecución: una función integrada con un argumento que no admite.
+print(len(42));
