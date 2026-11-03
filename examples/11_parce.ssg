@@ -4,7 +4,7 @@
 //
 //   parce = let          vuelta = function      devuelva = return
 //   pilas = if           osea = elif            deResto = else
-//   dele = while         pa = for               deUna / nanai = true / false
+//   dele = while         pa = for               deUna / paila = true / false
 //   diga = print         cuantos = len          queEs = type
 
 parce nombre = "Kyra";
@@ -47,9 +47,9 @@ pa (parce i = 0; i < cuantos(combo); i = i + 1) {
     diga("  pedido", i + 1, ":", combo[i]);
 }
 
-// deUna y nanai.
+// deUna y paila.
 parce hayTinto = deUna;
-parce hayGuaro = nanai;
+parce hayGuaro = paila;
 diga("¿hay tinto?", hayTinto, "¿hay guaro?", hayGuaro);
 pilas (hayTinto && !hayGuaro) { diga("¡De una, parce! Un tintico pa' estudiar.") }
 diga("kyra es de tipo", queEs(nombre));
