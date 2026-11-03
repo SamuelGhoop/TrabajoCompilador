@@ -1,0 +1,31 @@
+// Expresiones: aritméticas, relacionales y lógicas, con precedencia y
+// asociatividad.
+// Ejecutar: npm start -- examples/02_expresiones.ssg
+
+// Aritmética: * / % van antes que + -.
+print("1 + 2 * 3 =", 1 + 2 * 3);         // 7, no 9
+print("(1 + 2) * 3 =", (1 + 2) * 3);     // los paréntesis cambian el orden
+print("10 - 4 - 3 =", 10 - 4 - 3);       // 3: la resta asocia por la izquierda, (10 - 4) - 3
+print("7 / 2 =", 7 / 2);                 // 3: la división es entera
+print("17 % 5 =", 17 % 5);               // 2: el resto de la división
+
+// La potencia es la excepción: asocia por la DERECHA, como en matemáticas.
+print("2 ** 3 ** 2 =", 2 ** 3 ** 2);     // 2 ** 9 = 512, no 8 ** 2 = 64
+// Y ata más fuerte que el menos de adelante: -2 ** 2 es -(2 ** 2).
+print("-2 ** 2 =", -2 ** 2);             // -4
+
+// Relacionales: producen true o false.
+print("3 < 5:", 3 < 5);
+print("3 >= 5:", 3 >= 5);
+print("4 == 4:", 4 == 4);
+print("a != b (textos):", "a" != "b");
+
+// Lógicas: && (y), || (o), ! (no). Van DESPUÉS de las comparaciones:
+// x > 0 && x < 10 es (x > 0) && (x < 10).
+let x = 7;
+print("x entre 0 y 10:", x > 0 && x < 10);
+print("x fuera de 0 a 5:", x < 0 || x > 5);
+print("no es cierto que x == 7:", !(x == 7));
+
+// && ata más que ||: true || false && false es true || (false && false).
+print("true || false && false =", true || false && false);
