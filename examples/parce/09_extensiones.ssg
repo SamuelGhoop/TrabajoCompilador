@@ -1,0 +1,71 @@
+// Versión en parce de examples/09_extensiones.ssg (generada con: npm run parce).
+// Extensiones: cierres (closures), evaluación en cortocircuito y funciones
+// de orden superior.
+// Ejecutar: npm start -- examples/parce/09_extensiones.ssg
+
+// --- Cierres ---
+// Una función recuerda las variables del lugar donde se creó, aunque ese
+// lugar ya haya terminado.
+parce crearSumador = vuelta(n) {
+    vuelta(x) { x + n }
+};
+parce sumarDiez = crearSumador(10);
+parce sumarCien = crearSumador(100);
+diga("sumarDiez(5) =", sumarDiez(5));
+diga("sumarCien(5) =", sumarCien(5));
+
+// Un contador que guarda su estado en una variable capturada.
+parce crearContador = vuelta() {
+    parce cuenta = 0;
+    vuelta() {
+        cuenta = cuenta + 1;
+        cuenta
+    }
+};
+parce contar = crearContador();
+contar();
+contar();
+diga("después de 3 llamadas:", contar());
+
+// --- Cortocircuito ---
+// && no evalúa el lado derecho si el izquierdo es falso; || no lo evalúa
+// si el izquierdo es verdadero.
+parce d = 0;
+diga("d != 0 && 10 / d > 1 =", d != 0 && 10 / d > 1);   // no divide por cero
+diga("true || noExiste =", deUna || noExiste);            // noExiste ni se busca
+
+// --- Funciones de orden superior ---
+// Funciones que reciben otras funciones como argumento.
+parce map = vuelta(lista, f) {
+    parce resultado = [];
+    pa (parce i = 0; i < cuantos(lista); i = i + 1) {
+        resultado = agregar(resultado, f(lista[i]));
+    }
+    resultado
+};
+parce filter = vuelta(lista, cumple) {
+    parce resultado = [];
+    pa (parce i = 0; i < cuantos(lista); i = i + 1) {
+        pilas (cumple(lista[i])) {
+            resultado = agregar(resultado, lista[i]);
+        }
+    }
+    resultado
+};
+parce reduce = vuelta(lista, inicial, f) {
+    parce acumulado = inicial;
+    pa (parce i = 0; i < cuantos(lista); i = i + 1) {
+        acumulado = f(acumulado, lista[i]);
+    }
+    acumulado
+};
+
+parce numeros = [1, 2, 3, 4, 5, 6];
+diga("map doble:", map(numeros, vuelta(x) { x * 2 }));
+diga("filter pares:", filter(numeros, vuelta(x) { x % 2 == 0 }));
+diga("reduce suma:", reduce(numeros, 0, vuelta(a, b) { a + b }));
+
+// Componer funciones: devuelve una función nueva.
+parce componer = vuelta(f, g) { vuelta(x) { f(g(x)) } };
+parce doblarYSumarDiez = componer(sumarDiez, vuelta(x) { x * 2 });
+diga("doblarYSumarDiez(4) =", doblarYSumarDiez(4));
