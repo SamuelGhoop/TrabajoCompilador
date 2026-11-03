@@ -138,6 +138,7 @@ export class ReturnValue implements Obj {
 export class ErrorObj implements Obj {
 	line: number | null = null;
 	column: number | null = null;
+	fuente: string | null = null; // el código donde está esa línea
 
 	constructor(public message: string) {}
 
