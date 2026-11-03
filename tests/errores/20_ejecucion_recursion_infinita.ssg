@@ -1,0 +1,4 @@
+// Error de ejecución: una recursión sin caso base agota la pila.
+// El intérprete lo reporta como un error del programa, sin fallar.
+let infinita = function(n) { infinita(n + 1) };
+infinita(0);
