@@ -91,8 +91,10 @@ export class Lexer {
 		const tok: token.Token = { ...this.readToken(), line, column };
 
 		if (tok.type === token.ILLEGAL) {
+			// De una cadena sin cerrar se muestra solo su primera línea: el
+			// resto del programa quedó "dentro" de ella y no aporta al mensaje.
 			const motivo = tok.literal.startsWith('"')
-				? `cadena sin cerrar ${tok.literal} (falta la comilla de cierre)`
+				? `cadena sin cerrar ${tok.literal.split("\n")[0].trimEnd()} (falta la comilla de cierre)`
 				: `carácter no reconocido '${tok.literal}'`;
 			this.errors.push(`Error léxico en ${token.posicion(tok)}: ${motivo}`);
 		}

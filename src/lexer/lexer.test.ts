@@ -228,7 +228,8 @@ test("TestLexicalErrors", () => {
     ['"hola\nx @ y & z'],
   );
   assert.deepEqual(l.getErrors(), [
-    'Error léxico en línea 1, columna 9: cadena sin cerrar "hola\nx @ y & z (falta la comilla de cierre)',
+    // El mensaje muestra solo la primera línea de la cadena sin cerrar.
+    'Error léxico en línea 1, columna 9: cadena sin cerrar "hola (falta la comilla de cierre)',
   ]);
 
   const l2 = new Lexer("x @ y & z | w");
