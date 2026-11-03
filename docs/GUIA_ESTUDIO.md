@@ -95,6 +95,8 @@ Program
 | `contador = 1` (sin `let`) | Ejecución | `identificador no definido: contador` |
 | `sumar(1)` con dos parámetros | Ejecución | `cantidad de argumentos incorrecta: se esperaban 2, llegaron 1` |
 
+**La flecha bajo el error** la arma `conContexto` (`src/interprete.ts`): toma la línea y la columna del propio mensaje ("en línea L, columna C"), busca esa línea en el código y pone un `^` debajo. Para que la flecha quede alineada, copia las tabulaciones que haya antes de la columna y cambia lo demás por espacios. La cara de Kyra la elige `imprimirErrores` (`src/repl/repl.ts`) según cómo empieza el primer mensaje: `Error léxico`, `Error de sintaxis` o `Error de ejecución`.
+
 **Regla para decidir:** si el problema es un carácter o una palabra que no existe, es **léxico**. Si las palabras existen pero están en un orden que la gramática no permite, es **sintáctico**. Si el programa está bien escrito pero falla al ejecutarse (un valor, un tipo, una variable que no existe), es **de ejecución**.
 
 ---
