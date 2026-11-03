@@ -110,6 +110,8 @@ Program
 4. `evaluator.ts`: agregar su `case` en `evaluarInfijoEnteros` (o en el tipo que corresponda).
 5. Pruebas: un caso en cada `*.test.ts` y un programa en `tests/validos/`.
 
+**Un sinónimo para una palabra reservada** (así se hizo `sea` = `let`): basta con agregar `["sea", LET]` al mapa `keywords` en `src/token/token.ts`. El lexer lee la palabra completa, la busca en ese mapa y entrega el token `LET`. El parser y el evaluador solo miran el TIPO de token, nunca el texto, así que no hay que cambiarlos: `sea x = 5;` produce exactamente el mismo AST que `let x = 5;` (compruébenlo en `:parser`). El texto sí se conserva en el literal del token, por eso el programa reconstruido muestra `sea x = 5;`.
+
 **Una función integrada** (por ejemplo `abs(x)`): basta con agregarla al mapa `builtins` en `src/evaluator/builtins.ts`. No hay que tocar el lexer ni el parser, porque `abs(x)` ya es una llamada normal y el evaluador busca el nombre en `builtins` cuando no es una variable.
 
 **Una sentencia nueva** (por ejemplo `break`): `BREAK` ya es palabra reservada. Habría que:
