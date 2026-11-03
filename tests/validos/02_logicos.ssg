@@ -1,0 +1,12 @@
+// Operadores relacionales y lógicos, con su precedencia.
+print(1 < 2, 2 > 1, 2 <= 2, 3 >= 4, 1 == 1, 1 != 1);
+print(true && false, true || false, !true);
+print(1 < 2 && 2 < 3);
+print(true || false && false);
+print((true || false) && false);
+print(!(1 == 2) && "a" == "a");
+// Cortocircuito: el lado derecho no se evalúa si no hace falta.
+let x = 0;
+print(x != 0 && 10 / x > 1);
+print(x == 0 || 10 / x > 1);
+print(false && noExiste, true || noExiste);
