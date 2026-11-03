@@ -1,0 +1,30 @@
+// while y for, incluidos ciclos anidados y return dentro de un ciclo.
+let i = 0;
+let suma = 0;
+while (i < 5) {
+    suma = suma + i;
+    i = i + 1;
+}
+print(suma);
+
+let pares = [];
+for (let j = 0; j < 10; j = j + 2) {
+    pares = pares + [j];
+}
+print(pares);
+
+let total = 0;
+for (let a = 1; a <= 3; a = a + 1) {
+    for (let b = 1; b <= 3; b = b + 1) {
+        total = total + a * b;
+    }
+}
+print(total);
+
+let buscar = function(lista, valor) {
+    for (let k = 0; k < len(lista); k = k + 1) {
+        if (lista[k] == valor) { return k; }
+    }
+    return -1;
+};
+print(buscar([5, 8, 13], 13), buscar([5, 8, 13], 4));
