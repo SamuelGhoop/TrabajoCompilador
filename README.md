@@ -108,6 +108,30 @@ imprimir("6! =", factorial(6));
 | `print` · `len` · `str` · `int` · `type` | `imprimir` · `longitud` · `texto` · `entero` · `tipo` |
 | `first` · `last` · `rest` · `push` | `primero` · `ultimo` · `resto` · `agregar` |
 
+### En "parce" (español colombiano)
+
+Y si prefiere, ¡escríbalo como un paisa!
+
+```text
+parce saludar = vuelta(quien) {
+    devuelva "¡Quiubo, " + quien + "!";
+};
+pilas (edad >= 18) { diga("ya es mayor") } osea (edad >= 13) { diga("está pelao") } deResto { diga("es un chiquito") }
+dele (arepas < 3) { arepas = arepas + 1; }
+pa (parce i = 0; i < cuantos(combo); i = i + 1) { diga(combo[i]); }
+```
+
+| Inglés | Parce | |
+| --- | --- | --- |
+| `let` | `parce` | `parce x = 5;` |
+| `function` · `return` | `vuelta` · `devuelva` | "hacer una vuelta" |
+| `if` · `elif` · `else` | `pilas` · `osea` · `deResto` | "¡pilas si…!", "o sea, si…", "de resto…" |
+| `while` · `for` | `dele` · `pa` | "¡dele mientras…!", "pa' cada uno" |
+| `true` · `false` | `deUna` · `nanai` | "¡de una!", "¡nanai cucas!" |
+| `print` · `len` · `type` | `diga` · `cuantos` · `queEs` | |
+
+Las palabras llevan mayúsculas donde se indica (`deUna`, `deResto`, `queEs`), sin tildes ni espacios, porque el lexer solo acepta palabras de letras ASCII.
+
 ### Funciones integradas
 
 | Función | Qué hace |
@@ -136,6 +160,7 @@ La carpeta [`examples/`](examples) tiene un programa comentado por cada caracter
 | `08_funciones_integradas.ssg` | Funciones integradas y conversión de tipos. |
 | `09_extensiones.ssg` | Cierres, cortocircuito y funciones de orden superior. |
 | `10_espanol.ssg` | El lenguaje con las palabras en español. |
+| `11_parce.ssg` | El lenguaje en "parce" (español colombiano). |
 | `programa.ssg` | Ejemplo del profesor: Ackermann, Fibonacci y Hanói (tarda ~30 s por `fibonacci(34)`). |
 
 ## Pruebas
