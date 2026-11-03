@@ -53,19 +53,27 @@ export function trazar(codigo: string, env: Environment): Traza {
 	const resultado = observarLlamadas(
 		{
 			entrar(nombre, args) {
+				total += 1;
+				// Las llamadas se dibujan en el mismo orden en que empiezan, así
+				// que de la número MAX_LLAMADAS_DIBUJADAS en adelante ninguna se
+				// va a dibujar: se siguen contando, pero no se guardan en el árbol
+				// (fibonacci(25) hace 250 000 llamadas: guardarlas todas llenaría
+				// la memoria para nada).
+				const seDibuja = total <= MAX_LLAMADAS_DIBUJADAS;
 				const llamada: Llamada = {
-					etiqueta: `${nombre}(${args.map(mostrar).join(", ")})`,
+					etiqueta: seDibuja ? `${nombre}(${args.map(mostrar).join(", ")})` : "",
 					resultado: null,
 					hijos: [],
 				};
-				pila[pila.length - 1].hijos.push(llamada);
+				if (seDibuja) {
+					pila[pila.length - 1].hijos.push(llamada);
+				}
 				pila.push(llamada);
-				total += 1;
 				profundidadMaxima = Math.max(profundidadMaxima, pila.length - 1);
 			},
 			salir(valor) {
 				const llamada = pila.pop();
-				if (llamada !== undefined) {
+				if (llamada !== undefined && llamada.etiqueta !== "") {
 					llamada.resultado = valor instanceof object.ErrorObj ? `ERROR: ${valor.message}` : mostrar(valor);
 				}
 			},
