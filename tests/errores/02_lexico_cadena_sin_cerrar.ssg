@@ -1,0 +1,2 @@
+// Error léxico: una cadena a la que le falta la comilla de cierre.
+let saludo = "hola;
