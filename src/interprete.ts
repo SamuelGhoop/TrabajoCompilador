@@ -27,6 +27,47 @@ export interface Resultado {
 // de sintaxis, lo ejecuta en el entorno dado. Recibir el entorno permite que
 // el REPL conserve las variables de una línea a otra.
 export function ejecutar(codigo: string, env: Environment): Resultado {
+	const resultado = ejecutarSinContexto(codigo, env);
+	return {
+		errores: resultado.errores.map((e) => conContexto(e, codigo)),
+		valor: resultado.valor,
+	};
+}
+
+// conContexto agrega a un mensaje de error la línea del código donde
+// ocurrió y una flecha (^) debajo de la columna exacta:
+//
+//	Error de ejecución en línea 3, columna 17: división por cero
+//	 3 |     return suma / cantidad;
+//	   |                 ^
+//
+// La posición se toma del propio mensaje ("en línea L, columna C"), que
+// escriben siempre igual el lexer, el parser y el evaluador. Si el mensaje
+// no tiene posición, se devuelve tal cual.
+export function conContexto(mensaje: string, codigo: string): string {
+	const posicion = /en línea (\d+), columna (\d+)/.exec(mensaje);
+	if (posicion === null) {
+		return mensaje;
+	}
+	const linea = Number(posicion[1]);
+	const columna = Number(posicion[2]);
+	const texto = codigo.split(/\r?\n/)[linea - 1];
+	if (texto === undefined) {
+		return mensaje;
+	}
+
+	// La flecha se alinea con lo que hay antes de la columna: se copian las
+	// tabulaciones (que ocupan más de un espacio en pantalla) y el resto se
+	// cambia por espacios.
+	const sangria = texto.slice(0, columna - 1).replace(/[^\t]/g, " ");
+	const numero = String(linea);
+	const margen = " ".repeat(numero.length);
+	return `${mensaje}\n ${numero} | ${texto}\n ${margen} | ${sangria}^`;
+}
+
+// ejecutarSinContexto hace el trabajo de ejecutar; los mensajes de error
+// todavía no llevan la línea del código.
+function ejecutarSinContexto(codigo: string, env: Environment): Resultado {
 	const parser = new Parser(new Lexer(codigo));
 	const program = parser.parseProgram();
 
