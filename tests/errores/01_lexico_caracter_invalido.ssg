@@ -1,0 +1,3 @@
+// Error léxico: un carácter que no existe en el lenguaje.
+let precio = 10;
+let total = precio @ 2;
