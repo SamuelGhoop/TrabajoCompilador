@@ -1,0 +1,13 @@
+// Las palabras en español producen los mismos tokens que las de inglés.
+sea fib = funcion(n) { si (n < 2) { retorna n; } retorna fib(n - 1) + fib(n - 2); };
+imprimir(fib(10));
+sea signo = funcion(n) { si (n > 0) { "+" } sinosi (n < 0) { "-" } sino { "0" } };
+imprimir(signo(3), signo(-3), signo(0));
+sea suma = 0;
+para (sea i = 1; i <= 4; i = i + 1) { suma = suma + i; }
+sea vueltas = 0;
+mientras (vueltas < 2) { vueltas = vueltas + 1; }
+imprimir(suma, vueltas, verdadero || falso, longitud(agregar([1], 2)), tipo(texto(5)));
+// Se mezclan con las de inglés sin problema.
+let mezcla = function(x) { si (x) { 1 } else { 2 } };
+mezcla(falso)
