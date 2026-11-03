@@ -109,8 +109,9 @@ test("TestReplKyraReacciona", async () => {
   assert.ok(out.includes("¡Uy, parce! Kyra no reconoce algo que escribiste:\n ( O|o )\n\tError léxico"));
   assert.ok(out.includes("¡Qué boleta! Kyra no entiende cómo está armado el código:\n ( -|- )\n\tError de sintaxis"));
   assert.ok(out.includes("¡Paila! Kyra se tropezó al ejecutar:\n ( x|x )\n\tError de ejecución"));
-  // kyra() dibuja su retrato y ladra.
-  assert.ok(out.includes("¡Guau, guau! Soy Kyra, la boston terrier de este compilador.\n"));
+  // kyra() dibuja su retrato (solo el dibujo, sin texto).
+  assert.ok(out.includes("evaluator>> ██████████   ▀▀"));
+  assert.ok(!out.includes("Soy Kyra"));
 });
 
 test("TestReplCargar", async () => {

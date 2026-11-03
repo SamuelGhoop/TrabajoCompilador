@@ -130,13 +130,13 @@ export const builtins = new Map<string, object.Builtin>([
 	//	type(5) → "INTEGER"   type("a") → "STRING"   type([]) → "ARRAY"
 	["type", unArgumento((arg) => new object.StringObj(arg.type()))],
 
-	// kyra es una sorpresa: dibuja a Kyra, la mascota del compilador, y ladra.
+	// kyra es una sorpresa: dibuja a Kyra, la mascota del compilador.
 	// No recibe argumentos y devuelve null.
 	["kyra", new object.Builtin((env: Environment, ...args) => {
 		if (args.length !== 0) {
 			return cantidadIncorrecta(0, args.length);
 		}
-		env.escribir(kyra.join("\n") + "\n\n        ¡Guau, guau! Soy Kyra, la boston terrier de este compilador.\n");
+		env.escribir(kyra.join("\n") + "\n");
 		return object.NULL;
 	})],
 ]);
