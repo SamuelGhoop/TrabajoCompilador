@@ -2,11 +2,23 @@
 //
 //	npm start                    → muestra la bienvenida e inicia el REPL
 //	npm start -- programa.ssg    → ejecuta el archivo completo y termina
+//
+// El intérprete corre en un HILO APARTE (worker thread) con una pila más
+// grande. El evaluador es recursivo: cada llamada del lenguaje usa varias
+// llamadas de TypeScript, y con la pila normal de Node (cerca de 1 MB) una
+// recursión de unas 600 llamadas ya la agotaba. Con 256 MB alcanza para
+// cientos de miles. El hilo principal solo muestra la bienvenida y le pasa
+// el teclado al hilo del intérprete.
 import * as os from "node:os";
+import { isMainThread, parentPort, Worker } from "node:worker_threads";
+
 import { ejecutarArchivo, mostrarValor } from "./interprete";
 import { kyra } from "./kyra";
 import { Environment } from "./object/environment";
 import { start } from "./repl/repl";
+
+// Tamaño de la pila del hilo del intérprete, en MB.
+const TAMANO_PILA_MB = 256;
 
 // Ancho interior del recuadro de bienvenida (sin los bordes).
 const ANCHO = 56;
@@ -50,9 +62,9 @@ function mostrarBienvenida(): void {
 
 // correrArchivo ejecuta un programa completo. Lo que escribe print y el
 // valor final van a la salida estándar; los errores, a la salida de
-// errores. Si hubo errores, el proceso termina con código 1 (así un script
-// puede saber que el programa falló).
-function correrArchivo(ruta: string): void {
+// errores. Devuelve el código de salida: 1 si hubo errores (así un script
+// puede saber que el programa falló), 0 si no.
+function correrArchivo(ruta: string): number {
 	const env = new Environment(null, (t) => process.stdout.write(t));
 	const resultado = ejecutarArchivo(ruta, env);
 
@@ -60,23 +72,60 @@ function correrArchivo(ruta: string): void {
 		for (const error of resultado.errores) {
 			console.error(error);
 		}
-		process.exitCode = 1;
-		return;
+		return 1;
 	}
 	const texto = mostrarValor(resultado.valor);
 	if (texto !== null) {
 		console.log(texto);
 	}
+	return 0;
 }
 
 const args = process.argv.slice(2);
-if (args.length === 1) {
-	correrArchivo(args[0]);
-} else if (args.length > 1) {
-	console.error("uso: npm start -- [archivo.ssg]");
-	process.exitCode = 1;
+
+if (isMainThread) {
+	// --- Hilo principal: bienvenida y arranque del hilo del intérprete ---
+	if (args.length > 1) {
+		console.error("uso: npm start -- [archivo.ssg]");
+		process.exitCode = 1;
+	} else {
+		const modoRepl = args.length === 0;
+		if (modoRepl) {
+			mostrarBienvenida();
+		}
+
+		// El hilo nuevo arranca sin saber leer TypeScript: primero registra el
+		// cargador de tsx y luego carga este mismo archivo (que, al ver que no
+		// es el hilo principal, inicia el intérprete).
+		const tsx = JSON.stringify(import.meta.resolve("tsx/esm/api"));
+		const esteArchivo = JSON.stringify(import.meta.url);
+		const arranque = `import(${tsx}).then(({ register }) => { register(); return import(${esteArchivo}); });`;
+
+		const interprete = new Worker(arranque, {
+			eval: true,
+			argv: args,
+			stdin: modoRepl, // solo el REPL necesita leer el teclado
+			resourceLimits: { stackSizeMb: TAMANO_PILA_MB },
+		});
+		if (modoRepl && interprete.stdin !== null) {
+			process.stdin.pipe(interprete.stdin);
+		}
+		// El hilo del intérprete avisa con qué código debe terminar el programa.
+		interprete.on("message", (codigo: number) => {
+			process.exitCode = codigo;
+		});
+		interprete.on("exit", () => {
+			// Se suelta el teclado para que el programa pueda terminar.
+			process.stdin.unpipe();
+			process.stdin.pause();
+		});
+	}
+} else if (args.length === 1) {
+	// --- Hilo del intérprete, ejecutando un archivo ---
+	parentPort?.postMessage(correrArchivo(args[0]));
 } else {
-	mostrarBienvenida();
-	// El REPL lee de la entrada estándar y escribe en la salida estándar.
+	// --- Hilo del intérprete, en modo REPL ---
+	// El REPL lee del teclado (que le pasa el hilo principal) y escribe en la
+	// salida estándar.
 	start(process.stdin, process.stdout);
 }
