@@ -1,0 +1,8 @@
+// Funciones integradas y conversión de tipos.
+print(len("hola"), len([1, 2]), len({"a": 1, "b": 2}));
+print(first([7, 8]), last([7, 8]), rest([7, 8, 9]), push([7], 8));
+print(first([]), rest([]));
+print(str(12) + str(true), type(str(12)));
+print(int("15") * 2, int(" -3 "), int(true), int(false));
+print(type(1), type("s"), type(false), type([]), type({}), type(len), type(function() { 1 }));
+print(type(if (false) { 1 }));
