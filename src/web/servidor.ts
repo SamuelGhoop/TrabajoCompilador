@@ -119,6 +119,19 @@ const servidor = createServer(async (req, res) => {
 	}
 });
 
+// Si el puerto ya está ocupado (por ejemplo, porque ya hay otro "npm run ui"
+// abierto), se explica qué pasa en lugar de mostrar el error de Node.
+servidor.on("error", (e: NodeJS.ErrnoException) => {
+	if (e.code === "EADDRINUSE") {
+		console.error(`El puerto ${PUERTO} ya está en uso: probablemente la interfaz ya está abierta en otra terminal.`);
+		console.error(`Ábrala en http://localhost:${PUERTO}, cierre la otra terminal (Ctrl+C), o use otro puerto:`);
+		console.error("  PowerShell:  $env:PORT=4748; npm run ui");
+		process.exitCode = 1;
+		return;
+	}
+	throw e;
+});
+
 servidor.listen(PUERTO, "127.0.0.1", () => {
 	console.log("KYRACOMPILER (TM) TERMLINK — interfaz web");
 	console.log(`Abre http://localhost:${PUERTO} en el navegador.  (Ctrl+C para cerrar)`);
