@@ -1,0 +1,3 @@
+// Error de ejecución: operar valores de tipos distintos.
+let edad = 3;
+print("Kyra tiene " + edad);
