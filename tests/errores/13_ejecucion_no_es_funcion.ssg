@@ -1,0 +1,3 @@
+// Error de ejecución: llamar algo que no es una función.
+let x = 5;
+x(1);
