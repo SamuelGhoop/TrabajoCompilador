@@ -3,22 +3,17 @@
 //	npm start                    → muestra la bienvenida e inicia el REPL
 //	npm start -- programa.ssg    → ejecuta el archivo completo y termina
 //
-// El intérprete corre en un HILO APARTE (worker thread) con una pila más
-// grande. El evaluador es recursivo: cada llamada del lenguaje usa varias
-// llamadas de TypeScript, y con la pila normal de Node (cerca de 1 MB) una
-// recursión de unas 600 llamadas ya la agotaba. Con 256 MB alcanza para
-// cientos de miles. El hilo principal solo muestra la bienvenida y le pasa
-// el teclado al hilo del intérprete.
+// El intérprete corre en un HILO APARTE con una pila grande (ver hilo.ts). El
+// hilo principal solo muestra la bienvenida y le pasa el teclado al hilo del
+// intérprete.
 import * as os from "node:os";
-import { isMainThread, parentPort, Worker } from "node:worker_threads";
+import { isMainThread, parentPort } from "node:worker_threads";
 
+import { crearHilo } from "./hilo";
 import { ejecutarArchivo, mostrarValor } from "./interprete";
 import { kyra } from "./kyra";
 import { Environment } from "./object/environment";
 import { start } from "./repl/repl";
-
-// Tamaño de la pila del hilo del intérprete, en MB.
-const TAMANO_PILA_MB = 256;
 
 // Ancho interior del recuadro de bienvenida (sin los bordes).
 const ANCHO = 56;
@@ -94,18 +89,11 @@ if (isMainThread) {
 			mostrarBienvenida();
 		}
 
-		// El hilo nuevo arranca sin saber leer TypeScript: primero registra el
-		// cargador de tsx y luego carga este mismo archivo (que, al ver que no
-		// es el hilo principal, inicia el intérprete).
-		const tsx = JSON.stringify(import.meta.resolve("tsx/esm/api"));
-		const esteArchivo = JSON.stringify(import.meta.url);
-		const arranque = `import(${tsx}).then(({ register }) => { register(); return import(${esteArchivo}); });`;
-
-		const interprete = new Worker(arranque, {
-			eval: true,
+		// El hilo carga este mismo archivo, que al ver que no es el hilo
+		// principal inicia el intérprete (ver el final de este archivo).
+		const interprete = crearHilo(new URL(import.meta.url), {
 			argv: args,
 			stdin: modoRepl, // solo el REPL necesita leer el teclado
-			resourceLimits: { stackSizeMb: TAMANO_PILA_MB },
 		});
 		if (modoRepl && interprete.stdin !== null) {
 			process.stdin.pipe(interprete.stdin);
