@@ -196,8 +196,20 @@ test("TestSpanishKeywords", () => {
   for (const [espanol, ingles] of pares) {
     assert.equal(new Lexer(espanol).nextToken().type, new Lexer(ingles).nextToken().type, espanol);
   }
+  // Y lo mismo con las palabras en "parce" (español colombiano).
+  const parce: [string, string][] = [
+    ["parce", "let"], ["vuelta", "function"], ["pilas", "if"], ["osea", "elif"],
+    ["deResto", "else"], ["dele", "while"], ["pa", "for"], ["devuelva", "return"],
+    ["deUna", "true"], ["nanai", "false"],
+  ];
+  for (const [colombiano, ingles] of parce) {
+    assert.equal(new Lexer(colombiano).nextToken().type, new Lexer(ingles).nextToken().type, colombiano);
+  }
   // El literal conserva lo que se escribió.
   assert.deepEqual(tokens("sea x = 5;")[0], [token.LET, "sea", 1, 1]);
+  assert.deepEqual(tokens("parce x = 5;")[0], [token.LET, "parce", 1, 1]);
+  // Las mayúsculas importan: "deuna" (sin la U mayúscula) es un identificador.
+  assert.equal(new Lexer("deuna").nextToken().type, token.IDENT);
   // Una palabra parecida que no es reservada sigue siendo un identificador.
   assert.equal(new Lexer("seas").nextToken().type, token.IDENT);
 });
