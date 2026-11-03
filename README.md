@@ -57,12 +57,26 @@ evaluator>> 10 / 0
 	   |    ^
 ```
 
+Con `:traza` se ve cómo trabaja la recursión: cada línea es una llamada, debajo van las llamadas que hizo y la flecha muestra lo que devolvió:
+
+```text
+evaluator>> :traza fibonacci(3)
+fibonacci(3) → 2
+├─ fibonacci(2) → 1
+│  ├─ fibonacci(1) → 1
+│  └─ fibonacci(0) → 0
+└─ fibonacci(1) → 1
+5 llamadas · profundidad máxima 3
+2
+```
+
 Cada error dice en qué etapa ocurrió (léxica, sintáctica o de ejecución) y en qué línea y columna, y muestra esa línea del código con una flecha bajo el lugar exacto. Kyra pone una cara distinta según la etapa: `( O|o )` léxica, `( -|- )` sintáctica, `( x|x )` de ejecución. Y si escribes `kyra()`, aparece ella.
 
 | Comando | Acción |
 | --- | --- |
 | `:lexer` / `:parser` / `:evaluator` | Cambia de modo (`:eval` también sirve). |
 | `:cargar ruta.ssg` | Ejecuta un archivo en la sesión actual; sus funciones quedan disponibles. |
+| `:traza código` | Ejecuta el código mostrando el árbol de llamadas a funciones (ver abajo). |
 | `:ayuda` | Muestra los comandos. |
 | `:salir` | Cierra el REPL (también Ctrl+D, o Ctrl+Z y Enter en Windows). |
 
