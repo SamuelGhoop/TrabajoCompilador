@@ -33,7 +33,7 @@ test("TestReplParser", async () => {
       "",
     ].join("\n"),
   ));
-  assert.ok(out.endsWith("¡Guau! Hasta luego.\n"));
+  assert.ok(out.endsWith("¡Guau! ¡Chao pues, parce!\n"));
 });
 
 test("TestReplLexerAndCommands", async () => {
@@ -94,7 +94,7 @@ test("TestReplEvaluador", async () => {
   assert.ok(out.includes("evaluator>> x vale 7\nevaluator>> "));
   // El error muestra la línea del código con una flecha bajo la columna.
   assert.ok(out.includes(
-    "¡Auch! Kyra tropezó al ejecutar:\n ( x|x )\n" +
+    "¡Paila! Kyra se tropezó al ejecutar:\n ( x|x )\n" +
     "\tError de ejecución en línea 1, columna 4: división por cero\n" +
     "\t 1 | 10 / 0\n" +
     "\t   |    ^\n",
@@ -106,9 +106,9 @@ test("TestReplKyraReacciona", async () => {
   // Kyra pone una cara distinta según la etapa del error.
   const out = await ejecutar(["3", "1 @ 2", "let = 1", "1 / 0", "kyra()", ":salir"]);
 
-  assert.ok(out.includes("¡Guau? Kyra no reconoce algo que escribiste:\n ( O|o )\n\tError léxico"));
-  assert.ok(out.includes("Grrr... Kyra no entiende cómo está armado el código:\n ( -|- )\n\tError de sintaxis"));
-  assert.ok(out.includes("¡Auch! Kyra tropezó al ejecutar:\n ( x|x )\n\tError de ejecución"));
+  assert.ok(out.includes("¡Uy, parce! Kyra no reconoce algo que escribiste:\n ( O|o )\n\tError léxico"));
+  assert.ok(out.includes("¡Qué boleta! Kyra no entiende cómo está armado el código:\n ( -|- )\n\tError de sintaxis"));
+  assert.ok(out.includes("¡Paila! Kyra se tropezó al ejecutar:\n ( x|x )\n\tError de ejecución"));
   // kyra() dibuja su retrato y ladra.
   assert.ok(out.includes("¡Guau, guau! Soy Kyra, la boston terrier de este compilador.\n"));
 });
@@ -130,7 +130,7 @@ test("TestReplCargar", async () => {
   // ...y sus funciones quedan disponibles en la sesión.
   assert.ok(out.includes("evaluator>> 21\n"));
   // Si el archivo carga sin errores, Kyra lo celebra.
-  assert.ok(out.includes("¡Guau, guau! Kyra cargó tests/validos/05_recursion.ssg: sus funciones ya están disponibles.\n ( ^|^ )\n"));
+  assert.ok(out.includes("¡Bacano! Kyra cargó tests/validos/05_recursion.ssg: sus funciones ya están disponibles.\n ( ^|^ )\n"));
   assert.ok(out.includes("Uso: :cargar ruta/al/archivo.ssg\n"));
   assert.ok(out.includes("\tNo se pudo leer el archivo no/existe.ssg\n"));
 });

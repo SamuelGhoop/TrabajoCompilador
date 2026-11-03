@@ -125,7 +125,7 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 						imprimirAyuda(escribir);
 						break;
 					case ":salir":
-						escribir("¡Guau! Hasta luego.\n");
+						escribir("¡Guau! ¡Chao pues, parce!\n");
 						return;
 					default:
 						escribir(`Comando desconocido ${JSON.stringify(line)}. Escribe :ayuda\n`);
@@ -250,9 +250,9 @@ function mostrarResultado(escribir: (t: string) => void, resultado: Resultado): 
 // Kyra reacciona distinto según la etapa del primer error: cada etapa
 // detecta una clase de problema diferente (ver el mensaje de cada una).
 const reaccionesDeKyra: [etapa: string, cara: string, frase: string][] = [
-	["Error léxico", "( O|o )", "¡Guau? Kyra no reconoce algo que escribiste:"],
-	["Error de sintaxis", "( -|- )", "Grrr... Kyra no entiende cómo está armado el código:"],
-	["Error de ejecución", "( x|x )", "¡Auch! Kyra tropezó al ejecutar:"],
+	["Error léxico", "( O|o )", "¡Uy, parce! Kyra no reconoce algo que escribiste:"],
+	["Error de sintaxis", "( -|- )", "¡Qué boleta! Kyra no entiende cómo está armado el código:"],
+	["Error de ejecución", "( x|x )", "¡Paila! Kyra se tropezó al ejecutar:"],
 ];
 
 // imprimirErrores muestra los errores encontrados, uno por renglón, junto
@@ -274,7 +274,7 @@ function imprimirErrores(escribir: (t: string) => void, errors: string[]): void 
 // imprimirExito muestra a Kyra contenta, por ejemplo al cargar un archivo
 // sin errores.
 function imprimirExito(escribir: (t: string) => void, mensaje: string): void {
-	escribir(` |\\_._/|   ¡Guau, guau! ${mensaje}\n`);
+	escribir(` |\\_._/|   ¡Bacano! ${mensaje}\n`);
 	escribir(" ( ^|^ )\n");
 }
 
