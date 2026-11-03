@@ -1,0 +1,41 @@
+// Versión en parce de examples/programa.ssg (generada con: npm run parce).
+parce numeros = [2, 4, 6];
+
+parce sumar = vuelta(lista) {
+    parce total = 0;
+    pa (parce i = 0; i < 3; i = i + 1) {
+        total = total + lista[i];
+    }
+    devuelva total;
+};
+
+parce datos = {"curso": "Compiladores", "factor": 2};
+parce resultado = sumar(numeros) * datos["factor"];
+
+parce ackermann = vuelta(m, n) {
+    pilas (m == 0) {
+        devuelva n + 1;
+    }
+    pilas (n == 0) {
+        devuelva ackermann(m - 1, 1);
+    }
+    devuelva ackermann(m - 1, ackermann(m, n - 1));
+};
+
+parce fibonacci = vuelta(n) {
+    pilas (n <= 1) {
+        devuelva n;
+    }
+    devuelva fibonacci(n - 1) + fibonacci(n - 2);
+};
+
+parce hanoi = vuelta(n, origen, destino, auxiliar) {
+    pilas (n == 0) {
+        devuelva [];
+    }
+    devuelva hanoi(n - 1, origen, auxiliar, destino)
+        + [[origen, destino]]
+        + hanoi(n - 1, auxiliar, destino, origen);
+};
+
+{"resultado": resultado, "ackermann": ackermann(2, 2), "fibonacci": fibonacci(34), "hanoi": hanoi(3, "A", "C", "B")};
