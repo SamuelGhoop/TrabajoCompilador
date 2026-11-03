@@ -1,0 +1,30 @@
+// Versión en parce de examples/08_funciones_integradas.ssg (generada con: npm run parce).
+// Funciones integradas: diga, cuantos, primero, ultimo, resto, agregar y las de
+// conversión de tipos str, entero y queEs.
+// Ejecutar: npm start -- examples/parce/08_funciones_integradas.ssg
+
+// diga escribe sus argumentos separados por espacios.
+diga("Hola", "Kyra", 1, deUna, [1, 2]);
+
+// cuantos: longitud de textos, arreglos y hashes.
+diga("len de compilador =", cuantos("compilador"));
+diga("len([1, 2, 3]) =", cuantos([1, 2, 3]));
+diga("len de un hash con 1 clave =", cuantos({"a": 1}));
+
+// primero, ultimo, resto, agregar.
+parce lista = [3, 1, 4];
+diga("first:", primero(lista), "last:", ultimo(lista), "rest:", resto(lista));
+diga("push:", agregar(lista, 1));
+
+// str convierte cualquier valor en texto: útil para unir textos con números.
+parce edad = 3;
+diga("Kyra tiene " + str(edad) + " años");
+
+// entero convierte un texto (o un booleano) en entero.
+parce texto = "41";
+diga("int de 41 (texto) + 1 =", entero(texto) + 1);
+diga("int(true) =", entero(deUna), "int(false) =", entero(paila));
+
+// queEs dice el tipo de un valor.
+diga(queEs(5), queEs("a"), queEs(deUna), queEs([1]), queEs({"a": 1}), queEs(diga));
+diga("tipo de una función:", queEs(vuelta(x) { x }));
