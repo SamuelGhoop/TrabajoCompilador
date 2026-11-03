@@ -98,7 +98,11 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 					if (ruta === "") {
 						escribir("Uso: :cargar ruta/al/archivo.ssg\n");
 					} else {
-						mostrarResultado(escribir, ejecutarArchivo(ruta, env));
+						const resultado = ejecutarArchivo(ruta, env);
+						mostrarResultado(escribir, resultado);
+						if (resultado.errores.length === 0) {
+							imprimirExito(escribir, `Kyra cargó ${ruta}: sus funciones ya están disponibles.`);
+						}
 					}
 					continue;
 				}
@@ -243,15 +247,35 @@ function mostrarResultado(escribir: (t: string) => void, resultado: Resultado): 
 	}
 }
 
+// Kyra reacciona distinto según la etapa del primer error: cada etapa
+// detecta una clase de problema diferente (ver el mensaje de cada una).
+const reaccionesDeKyra: [etapa: string, cara: string, frase: string][] = [
+	["Error léxico", "( O|o )", "¡Guau? Kyra no reconoce algo que escribiste:"],
+	["Error de sintaxis", "( -|- )", "Grrr... Kyra no entiende cómo está armado el código:"],
+	["Error de ejecución", "( x|x )", "¡Auch! Kyra tropezó al ejecutar:"],
+];
+
 // imprimirErrores muestra los errores encontrados, uno por renglón, junto
 // con Kyra, la mascota del compilador. Cada mensaje ya dice en qué etapa
-// ocurrió (léxico, sintaxis o ejecución) y en qué línea y columna.
+// ocurrió (léxico, sintaxis o ejecución), en qué línea y columna, y muestra
+// esa parte del código.
 function imprimirErrores(escribir: (t: string) => void, errors: string[]): void {
-	escribir(" |\\_._/|   ¡Guau! Kyra encontró errores:\n");
-	escribir(" ( o|o )\n");
+	const reaccion = reaccionesDeKyra.find(([etapa]) => errors[0].startsWith(etapa));
+	const [, cara, frase] = reaccion ?? ["", "( o|o )", "¡Guau! Kyra encontró errores:"];
+
+	escribir(` |\\_._/|   ${frase}\n`);
+	escribir(` ${cara}\n`);
 	for (const msg of errors) {
-		escribir(`\t${msg}\n`);
+		// Las líneas del extracto de código van con la misma sangría.
+		escribir(`\t${msg.replace(/\n/g, "\n\t")}\n`);
 	}
+}
+
+// imprimirExito muestra a Kyra contenta, por ejemplo al cargar un archivo
+// sin errores.
+function imprimirExito(escribir: (t: string) => void, mensaje: string): void {
+	escribir(` |\\_._/|   ¡Guau, guau! ${mensaje}\n`);
+	escribir(" ( ^|^ )\n");
 }
 
 // ---------------------------------------------------------------------------

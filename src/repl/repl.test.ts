@@ -43,7 +43,7 @@ test("TestReplLexerAndCommands", async () => {
   assert.ok(out.includes('{Type:IDENT Literal:x}\n{Type:% Literal:%}\n{Type:STRING Literal:hi}\n'));
   assert.ok(out.includes('Comando desconocido ":foo". Escribe :ayuda'));
   assert.ok(out.includes("Modo parser: se mostrará el AST."));
-  assert.ok(out.includes(' ( o|o )\n\tError de sintaxis en línea 1, columna 5: se esperaba IDENT, pero se encontró = ("=")\n'));
+  assert.ok(out.includes(' ( -|- )\n\tError de sintaxis en línea 1, columna 5: se esperaba IDENT, pero se encontró = ("=")\n'));
   // Al acabarse la entrada (como con Ctrl+D) el REPL termina en el prompt.
   assert.ok(out.endsWith("lexer>> "));
 });
@@ -92,10 +92,25 @@ test("TestReplEvaluador", async () => {
   assert.ok(out.includes("evaluator>> evaluator>> Hola Kyra\n"));
   // print escribe el texto, y como devuelve null no se imprime "null".
   assert.ok(out.includes("evaluator>> x vale 7\nevaluator>> "));
+  // El error muestra la línea del código con una flecha bajo la columna.
   assert.ok(out.includes(
-    "Kyra encontró errores:\n ( o|o )\n\tError de ejecución en línea 1, columna 4: división por cero\n",
+    "¡Auch! Kyra tropezó al ejecutar:\n ( x|x )\n" +
+    "\tError de ejecución en línea 1, columna 4: división por cero\n" +
+    "\t 1 | 10 / 0\n" +
+    "\t   |    ^\n",
   ));
   assert.ok(out.includes("\tError de sintaxis en línea 1, columna 5: se esperaba IDENT"));
+});
+
+test("TestReplKyraReacciona", async () => {
+  // Kyra pone una cara distinta según la etapa del error.
+  const out = await ejecutar(["3", "1 @ 2", "let = 1", "1 / 0", "kyra()", ":salir"]);
+
+  assert.ok(out.includes("¡Guau? Kyra no reconoce algo que escribiste:\n ( O|o )\n\tError léxico"));
+  assert.ok(out.includes("Grrr... Kyra no entiende cómo está armado el código:\n ( -|- )\n\tError de sintaxis"));
+  assert.ok(out.includes("¡Auch! Kyra tropezó al ejecutar:\n ( x|x )\n\tError de ejecución"));
+  // kyra() dibuja su retrato y ladra.
+  assert.ok(out.includes("¡Guau, guau! Soy Kyra, la boston terrier de este compilador.\n"));
 });
 
 test("TestReplCargar", async () => {
@@ -114,6 +129,8 @@ test("TestReplCargar", async () => {
   assert.ok(out.includes("2432902008176640000\n6765\n7\n15\n"));
   // ...y sus funciones quedan disponibles en la sesión.
   assert.ok(out.includes("evaluator>> 21\n"));
+  // Si el archivo carga sin errores, Kyra lo celebra.
+  assert.ok(out.includes("¡Guau, guau! Kyra cargó tests/validos/05_recursion.ssg: sus funciones ya están disponibles.\n ( ^|^ )\n"));
   assert.ok(out.includes("Uso: :cargar ruta/al/archivo.ssg\n"));
   assert.ok(out.includes("\tNo se pudo leer el archivo no/existe.ssg\n"));
 });
