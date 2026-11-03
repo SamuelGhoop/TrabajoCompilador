@@ -47,7 +47,7 @@ STRING       = '"' { cualquier carácter excepto '"' } '"' ;
 comentario   = "//" { cualquier carácter excepto salto de línea } ;   (* se ignora *)
 ```
 
-Palabras reservadas: `let return function if elif else while for true false break`, cada una con un sinónimo en español (`sea retorna funcion si sinosi sino mientras para verdadero falso`) y otro en español colombiano (`parce devuelva vuelta pilas osea deResto dele pa deUna nanai`) que producen el mismo token. En la gramática, `"let"` significa "`let`, `sea` o `parce`", y así con las demás. La condición de `if`/`while` puede ir con o sin paréntesis (los paréntesis son una expresión agrupada). Un `elif` se construye como un `if` anidado dentro del `else`.
+Palabras reservadas: `let return function if elif else while for true false break`, cada una con un sinónimo en español (`sea retorna funcion si sinosi sino mientras para verdadero falso`) y otro en español colombiano (`parce devuelva vuelta pilas osea deResto dele pa deUna paila`) que producen el mismo token. En la gramática, `"let"` significa "`let`, `sea` o `parce`", y así con las demás. La condición de `if`/`while` puede ir con o sin paréntesis (los paréntesis son una expresión agrupada). Un `elif` se construye como un `if` anidado dentro del `else`.
 
 ## 2. Arquitectura
 
