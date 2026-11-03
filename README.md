@@ -80,6 +80,21 @@ Cada error dice en qué etapa ocurrió (léxica, sintáctica o de ejecución) y 
 | `:ayuda` | Muestra los comandos. |
 | `:salir` | Cierra el REPL (también Ctrl+D, o Ctrl+Z y Enter en Windows). |
 
+## Interfaz web (estilo terminal de Fallout)
+
+```bash
+npm run ui
+```
+
+Abre **http://localhost:4747** en el navegador. Es una terminal de fósforo verde al estilo de los terminales de Fallout, con efectos de CRT y sonidos generados por el navegador:
+
+- **Editor** a la izquierda: programas de varias líneas, con números de línea; la línea de un error se marca en rojo.
+- **Pestañas** a la derecha con las tres etapas del mismo código: **[SALIDA]** (lo que escribe `print` y el valor final, o los errores con Kyra), **[TOKENS]** (lexer), **[AST]** (parser) y **[TRAZA]** (árbol de llamadas).
+- **[EJEMPLOS…]** carga cualquier programa de `examples/`.
+- **Atajos:** `Ctrl+Enter` ejecuta, `Esc` detiene y `F1` abre la ayuda.
+
+El navegador no ejecuta el lenguaje: le manda el código al servidor, que lo corre con **el mismo intérprete** del REPL en un hilo con pila de 256 MB. Por eso no tiene el límite de recursión del navegador (en la interfaz también funcionan 50 000 llamadas anidadas) y da exactamente los mismos resultados que la terminal. Cada programa tiene un tiempo límite de 60 s, y **[■ DETENER]** lo corta (por ejemplo, un ciclo infinito). El servidor solo escucha en `127.0.0.1`.
+
 ## El lenguaje
 
 ```text
@@ -201,7 +216,10 @@ Para agregar un caso, basta con crear `tests/validos/nombre.ssg` (o en `errores/
 | `src/object/` | Valores en ejecución y entorno de variables. |
 | `src/evaluator/` | Evaluador del AST y funciones integradas. |
 | `src/interprete.ts` | Une las tres etapas para ejecutar un programa. |
-| `src/repl/` | REPL interactivo. |
+| `src/repl/` | REPL interactivo y `:traza`. |
 | `src/main.ts`, `src/kyra.ts` | Punto de entrada y la bienvenida de Kyra. |
+| `src/hilo.ts` | Crea los hilos con pila de 256 MB donde corre el intérprete. |
+| `src/web/` | Servidor de la interfaz web y el ejecutor de cada programa. |
+| `web/index.html` | La interfaz web (un solo archivo, sin dependencias). |
 | `examples/`, `tests/` | Programas de ejemplo y casos de prueba. |
 | `docs/DISENO.md` | Documento de diseño: gramática, arquitectura, decisiones y limitaciones. |
