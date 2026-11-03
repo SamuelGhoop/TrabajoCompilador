@@ -1,0 +1,42 @@
+// Versión en parce de examples/07_estructuras.ssg (generada con: npm run parce).
+// Estructuras de datos: arreglos y hashes (diccionarios).
+// Ejecutar: npm start -- examples/parce/07_estructuras.ssg
+
+// --- Arreglos ---
+parce numeros = [10, 20, 30];
+diga("arreglo:", numeros);
+diga("primero:", numeros[0], "último:", numeros[cuantos(numeros) - 1]);
+diga("fuera de rango da null:", numeros[99]);
+
+// Cambiar una posición que existe.
+numeros[1] = 25;
+diga("después de numeros[1] = 25:", numeros);
+
+// + une dos arreglos en uno NUEVO (los originales no cambian).
+parce todos = numeros + [40, 50];
+diga("unidos:", todos);
+
+// agregar también devuelve un arreglo nuevo.
+parce conUnoMas = agregar(numeros, 99);
+diga("push:", conUnoMas, "original:", numeros);
+
+// Los elementos pueden ser de cualquier tipo, incluso otros arreglos.
+parce matriz = [[1, 2], [3, 4]];
+matriz[1][0] = 30;
+diga("matriz:", matriz);
+
+// --- Hashes ---
+parce kyra = {"nombre": "Kyra", "raza": "boston terrier", "edad": 3};
+diga("hash:", kyra);
+diga("nombre:", kyra["nombre"]);
+diga("clave que no existe da null:", kyra["color"]);
+
+// Cambiar y agregar claves.
+kyra["edad"] = kyra["edad"] + 1;
+kyra["color"] = "cafe y blanco";
+diga("actualizado:", kyra);
+diga("cantidad de claves:", cuantos(kyra));
+
+// Las claves pueden ser textos, enteros o booleanos.
+parce mixto = {1: "uno", deUna: "verdadero", "dos": 2};
+diga(mixto[1], mixto[deUna], mixto["dos"]);
