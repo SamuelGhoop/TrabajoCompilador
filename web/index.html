@@ -330,13 +330,59 @@ html, body {
   background: var(--phos); color: #000; outline: none; text-shadow: none;
 }
 #hudRight { margin-left: auto; display: flex; flex-wrap: wrap; gap: 0 1.2ch; }
-#ejemplos {
-  font: inherit; letter-spacing: inherit; text-transform: uppercase;
-  background: var(--bg); color: var(--phos); border: 1px solid var(--phos-dim);
-  padding: 0 .3ch; cursor: pointer; text-shadow: var(--glow); max-width: 16em;
+/* ------------------------------------------------------- MENÚ DE EJEMPLOS */
+#menuEj {
+  position: absolute;
+  inset: 0;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);   /* opaco: el editor de atrás no se transparenta */
+  padding: clamp(10px, 3vmin, 40px);
+  text-shadow: var(--glow);
+  font-size: clamp(8px, 2.3cqh, 30px);
+  letter-spacing: .1em;
 }
-#ejemplos:focus-visible { outline: 1px solid var(--phos); }
-#ejemplos option { background: var(--bg); color: var(--phos); }
+#menuEj h2 { margin: 0 0 .4em; font-size: 1.15em; font-weight: normal; text-transform: uppercase; }
+#menuModos { display: flex; gap: 0 1.2ch; margin-bottom: .6em; }
+#menuCuerpo {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 21em) minmax(0, 1fr);
+  gap: 0 2ch;
+  min-height: 0;
+}
+#menuLista { overflow-y: auto; overflow-x: hidden; text-transform: uppercase; letter-spacing: .06em; }
+.op { white-space: pre; overflow: hidden; text-overflow: ellipsis; padding: 0 .4ch; cursor: pointer; }
+.op::before { content: "  "; }
+/* Resaltado = bloque duro, sin transición (como en ROBCO TERMLINK) */
+.op.hl { background: var(--phos); color: #000; text-shadow: none; }
+.op.hl::before { content: "> "; }
+#menuVista {
+  margin: 0;
+  overflow: hidden;
+  white-space: pre;
+  font: inherit;
+  font-size: .82em;
+  letter-spacing: .02em;
+  color: var(--phos-dim);
+  text-shadow: none;
+  border-left: 1px solid rgba(60,255,122,.22);
+  padding-left: 1.5ch;
+}
+#menuPie {
+  margin-top: .6em;
+  padding-top: .3em;
+  border-top: 1px solid rgba(60,255,122,.22);
+  font-size: .8em;
+  color: var(--phos-dim);
+  text-shadow: none;
+  text-transform: uppercase;
+}
+@media (max-width: 760px) {
+  #menuCuerpo { grid-template-columns: 1fr; }
+  #menuVista { display: none; }
+}
 
 /* ---------------------------------------------------------------- AYUDA */
 #help {
@@ -424,7 +470,7 @@ html, body {
           <div id="hud">
             <button class="btn" id="btnRun" title="Ejecutar (Ctrl+Enter)">[▶ EJECUTAR]</button>
             <button class="btn" id="btnStop" title="Detener (Esc)" disabled>[■ DETENER]</button>
-            <select id="ejemplos" title="Cargar un ejemplo"><option value="">EJEMPLOS…</option></select>
+            <button class="btn" id="btnEjemplos" title="Cargar un ejemplo (F2)">[EJEMPLOS ▾]</button>
             <span id="hudRight">
               <button class="btn" id="btnClear" title="Limpiar el editor">[LIMPIAR]</button>
               <button class="btn" id="btnHelp" title="Ayuda (F1)">[?]</button>
@@ -450,7 +496,7 @@ html, body {
               <li>[TOKENS] lo que produce el lexer.</li>
               <li>[AST] el árbol que arma el parser.</li>
               <li>[TRAZA] el árbol de llamadas a funciones.</li>
-              <li>[EJEMPLOS…] carga los programas de <code>examples/</code>.</li>
+              <li>[EJEMPLOS ▾] o <span class="k">F2</span> abre el menú de ejemplos: [NORMAL] o [COLOMBIANO] (los mismos, en parce).</li>
             </ul>
             <h3>Errores</h3>
             <ul>
@@ -475,6 +521,20 @@ html, body {
         </div>
         <p>&nbsp;</p>
         <p><button class="btn" id="btnHelpClose">[ CERRAR ]</button></p>
+      </div>
+
+      <!-- ===================== MENÚ DE EJEMPLOS ===================== -->
+      <div id="menuEj" class="hidden" role="dialog" aria-label="Ejemplos">
+        <h2>SELECCIONE UN EJEMPLO</h2>
+        <div id="menuModos" role="tablist">
+          <button class="tab on" data-modo="normal" role="tab">[NORMAL]</button>
+          <button class="tab" data-modo="colombiano" role="tab">[COLOMBIANO]</button>
+        </div>
+        <div id="menuCuerpo">
+          <div id="menuLista" role="listbox"></div>
+          <pre id="menuVista" aria-hidden="true"></pre>
+        </div>
+        <div id="menuPie">↑ ↓ MOVER · ← → NORMAL / COLOMBIANO · ENTER CARGAR · ESC CERRAR</div>
       </div>
 
       <!-- capas de efecto, siempre encima -->
@@ -505,7 +565,7 @@ function lsSet(k, v)   { try { localStorage.setItem(k, JSON.stringify(v)); } cat
 
 const el = {};
 ["content","screen","led","boot","bootText","bootBar","bootReady","term","status","editor","gutter",
- "posCursor","out","btnRun","btnStop","ejemplos","btnClear","btnHelp","btnMute","btnBoot","help",
+ "posCursor","out","btnRun","btnStop","btnEjemplos","menuEj","menuLista","menuVista","btnClear","btnHelp","btnMute","btnBoot","help",
  "btnHelpClose","fxStatic","fxRed","fxWhite","powerOn","poLine"].forEach(id => el[id] = $(id));
 
 /* ============================================================================
@@ -899,7 +959,7 @@ function lineasTraza(r) {
 
 function mostrarTab(tab, recienEjecutado) {
   tabActual = tab;
-  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  document.querySelectorAll(".tab[data-tab]").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
   if (!ultima) {
     escribirSalida([{ t: "(todavía no se ha ejecutado nada: pulse [▶ EJECUTAR] o Ctrl+Enter)", c: "dim" }], false);
     return;
@@ -945,27 +1005,92 @@ async function escribirSalida(lineas, animar) {
 /* ============================================================================
  * 8. EJEMPLOS, AYUDA Y CONTROLES
  * ==========================================================================*/
+/* --- Menú de ejemplos: NORMAL (examples/) o COLOMBIANO (examples/parce/) --- */
+let EJEMPLOS = { normal: [], colombiano: [] };
+const menu = { modo: lsGet("kyra_modo_ejemplos", "normal"), indice: 0 };
+
 async function cargarEjemplos() {
-  try {
-    const lista = await (await fetch("/api/ejemplos")).json();
-    lista.forEach(ej => {
-      const o = document.createElement("option");
-      o.value = ej.codigo; o.textContent = ej.nombre.replace(/\.ssg$/, "").replace(/_/g, " ");
-      el.ejemplos.append(o);
-    });
-  } catch (e) {}
+  try { EJEMPLOS = await (await fetch("/api/ejemplos")).json(); } catch (e) {}
 }
-el.ejemplos.addEventListener("change", () => {
-  if (!el.ejemplos.value) return;
-  el.editor.value = el.ejemplos.value;
-  el.ejemplos.selectedIndex = 0;
+
+/* "05_funciones.ssg" → "05 · FUNCIONES" */
+function nombreDeEjemplo(archivo) {
+  if (archivo === "programa.ssg") return "PROGRAMA DEL PROFESOR";
+  return archivo.replace(/\.ssg$/, "").replace(/^(\d+)_/, "$1 · ").replace(/_/g, " ");
+}
+
+function menuAbierto() { return !el.menuEj.classList.contains("hidden"); }
+function listaDelMenu() { return EJEMPLOS[menu.modo] || []; }
+
+function renderMenu() {
+  document.querySelectorAll("#menuModos .tab").forEach(b => b.classList.toggle("on", b.dataset.modo === menu.modo));
+  const lista = listaDelMenu();
+  el.menuLista.textContent = "";
+  lista.forEach((ej, i) => {
+    const op = document.createElement("div");
+    op.className = "op" + (i === menu.indice ? " hl" : "");
+    op.setAttribute("role", "option");
+    op.textContent = nombreDeEjemplo(ej.nombre);
+    op.addEventListener("mouseenter", () => { if (menu.indice !== i) { menu.indice = i; SFX.key(); renderMenu(); } });
+    op.addEventListener("click", () => elegirEjemplo(i));
+    el.menuLista.append(op);
+  });
+  // Vista previa: las primeras líneas del ejemplo resaltado.
+  const actual = lista[menu.indice];
+  el.menuVista.textContent = actual ? actual.codigo.split("\n").slice(0, 26).join("\n") : "(no hay ejemplos)";
+  const hl = el.menuLista.children[menu.indice];
+  if (hl) hl.scrollIntoView({ block: "nearest" });
+}
+
+function abrirMenu() {
+  if (!listaDelMenu().length) cargarEjemplos().then(renderMenu);
+  menu.indice = Math.min(menu.indice, Math.max(0, listaDelMenu().length - 1));
+  el.menuEj.classList.remove("hidden");
+  SFX.block();
+  renderMenu();
+}
+
+function cerrarMenu() {
+  el.menuEj.classList.add("hidden");
+  SFX.deny();
+  el.editor.focus();
+}
+
+function moverMenu(paso) {
+  const n = listaDelMenu().length;
+  if (!n) return;
+  menu.indice = (menu.indice + paso + n) % n;
+  SFX.key();
+  renderMenu();
+}
+
+function cambiarModo(modo) {
+  if (modo === menu.modo) return;
+  // Se queda en el mismo ejemplo (por nombre) si existe en el otro modo.
+  const actual = listaDelMenu()[menu.indice];
+  menu.modo = modo;
+  lsSet("kyra_modo_ejemplos", modo);
+  const igual = actual ? listaDelMenu().findIndex(ej => ej.nombre === actual.nombre) : -1;
+  menu.indice = igual >= 0 ? igual : 0;
+  SFX.confirm();
+  renderMenu();
+}
+
+function elegirEjemplo(i) {
+  const ej = listaDelMenu()[i];
+  if (!ej) return;
+  el.menuEj.classList.add("hidden");
+  el.editor.value = ej.codigo;
   el.editor.scrollTop = 0;
   lineaConError = null;
   renderGutter(); renderPos(); lsSet("kyra_codigo", el.editor.value);
-  for (let i = 0; i < 5; i++) SFX.blip(1500, 0.018, "square", 0.07, null, i * 0.04);
-  setStatus("EJEMPLO CARGADO. PULSE [▶ EJECUTAR]");
+  for (let k = 0; k < 5; k++) SFX.blip(1500, 0.018, "square", 0.07, null, k * 0.04);
+  setStatus("EJEMPLO " + (menu.modo === "colombiano" ? "EN PARCE " : "") + "CARGADO: " + nombreDeEjemplo(ej.nombre) + ". PULSE [▶ EJECUTAR]");
   el.editor.focus();
-});
+}
+
+el.btnEjemplos.addEventListener("click", abrirMenu);
+document.querySelectorAll("#menuModos .tab").forEach(b => b.addEventListener("click", () => cambiarModo(b.dataset.modo)));
 
 function toggleHelp(abrir) {
   el.help.classList.toggle("hidden", !abrir);
@@ -983,13 +1108,26 @@ el.btnHelp.addEventListener("click", () => toggleHelp(true));
 el.btnHelpClose.addEventListener("click", () => toggleHelp(false));
 el.btnMute.addEventListener("click", () => { SFX.setMuted(!SFX.muted); renderMute(); if (!SFX.muted) SFX.confirm(); });
 el.btnBoot.addEventListener("click", async () => { await runBoot(true); arrancarTerminal(); });
-document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+document.querySelectorAll(".tab[data-tab]").forEach(b => b.addEventListener("click", () => {
   SFX.block();
   mostrarTab(b.dataset.tab, false);
 }));
 
 window.addEventListener("keydown", e => {
   if (el.term.classList.contains("hidden")) return;
+  // Con el menú de ejemplos abierto, las teclas manejan el menú (y no llegan
+  // al editor que está detrás).
+  if (menuAbierto()) {
+    const acciones = {
+      ArrowUp: () => moverMenu(-1), ArrowDown: () => moverMenu(1),
+      ArrowLeft: () => cambiarModo("normal"), ArrowRight: () => cambiarModo("colombiano"),
+      Enter: () => elegirEjemplo(menu.indice), Escape: cerrarMenu, F2: cerrarMenu,
+    };
+    if (acciones[e.key]) { e.preventDefault(); acciones[e.key](); }
+    else if (e.key !== "Tab") e.preventDefault();
+    return;
+  }
+  if (e.key === "F2") { e.preventDefault(); abrirMenu(); return; }
   if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); ejecutar(tabActual === "traza"); }
   else if (e.key === "Escape") {
     if (!el.help.classList.contains("hidden")) toggleHelp(false);
