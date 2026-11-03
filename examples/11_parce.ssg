@@ -1,0 +1,55 @@
+// El lenguaje en "parce": español colombiano. Es el mismo lenguaje con otras
+// palabras; se puede mezclar con el inglés y con el español.
+// Ejecutar: npm start -- examples/11_parce.ssg
+//
+//   parce = let          vuelta = function      devuelva = return
+//   pilas = if           osea = elif            deResto = else
+//   dele = while         pa = for               deUna / nanai = true / false
+//   diga = print         cuantos = len          queEs = type
+
+parce nombre = "Kyra";
+parce saludar = vuelta(quien) {
+    devuelva "¡Quiubo, " + quien + "!";
+};
+diga(saludar("parcero"));
+
+// pilas / osea / deResto
+parce comoEsta = vuelta(edad) {
+    pilas (edad >= 18) {
+        "ya es mayor de edad"
+    } osea (edad >= 13) {
+        "está pelao todavía"
+    } deResto {
+        "es un chiquito"
+    }
+};
+diga("con 20:", comoEsta(20));
+diga("con 15:", comoEsta(15));
+diga("con 7:", comoEsta(7));
+
+// Recursión: la vuelta se llama a sí misma.
+parce factorial = vuelta(n) {
+    pilas (n <= 1) { devuelva 1; }
+    devuelva n * factorial(n - 1);
+};
+diga("el factorial de 5 es", factorial(5));
+
+// dele: repetir mientras se cumpla.
+parce arepas = 0;
+dele (arepas < 3) {
+    arepas = arepas + 1;
+}
+diga("nos comimos", arepas, "arepas");
+
+// pa: recorrer una lista.
+parce combo = ["bandeja paisa", "arepa", "chocolate"];
+pa (parce i = 0; i < cuantos(combo); i = i + 1) {
+    diga("  pedido", i + 1, ":", combo[i]);
+}
+
+// deUna y nanai.
+parce hayTinto = deUna;
+parce hayGuaro = nanai;
+diga("¿hay tinto?", hayTinto, "¿hay guaro?", hayGuaro);
+pilas (hayTinto && !hayGuaro) { diga("¡De una, parce! Un tintico pa' estudiar.") }
+diga("kyra es de tipo", queEs(nombre));
