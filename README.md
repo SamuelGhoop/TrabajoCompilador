@@ -88,6 +88,26 @@ let kyra = {"raza": "boston terrier"};         // hashes
 - Solo `false` y `null` son falsos. La división es entera (`7 / 2` da `3`). `+` también une textos y arreglos.
 - **Comentarios:** desde `//` hasta el final de la línea.
 
+### En español
+
+Cada palabra reservada y cada función integrada también se puede escribir en español, y se pueden mezclar con las de inglés:
+
+```text
+sea factorial = funcion(n) {
+    si (n <= 1) { retorna 1; } sino { retorna n * factorial(n - 1); }
+};
+imprimir("6! =", factorial(6));
+```
+
+| Inglés | Español |
+| --- | --- |
+| `let` · `function` · `return` | `sea` · `funcion` · `retorna` |
+| `if` · `elif` · `else` | `si` · `sinosi` · `sino` |
+| `while` · `for` | `mientras` · `para` |
+| `true` · `false` | `verdadero` · `falso` |
+| `print` · `len` · `str` · `int` · `type` | `imprimir` · `longitud` · `texto` · `entero` · `tipo` |
+| `first` · `last` · `rest` · `push` | `primero` · `ultimo` · `resto` · `agregar` |
+
 ### Funciones integradas
 
 | Función | Qué hace |
@@ -115,6 +135,7 @@ La carpeta [`examples/`](examples) tiene un programa comentado por cada caracter
 | `07_estructuras.ssg` | Arreglos y hashes. |
 | `08_funciones_integradas.ssg` | Funciones integradas y conversión de tipos. |
 | `09_extensiones.ssg` | Cierres, cortocircuito y funciones de orden superior. |
+| `10_espanol.ssg` | El lenguaje con las palabras en español. |
 | `programa.ssg` | Ejemplo del profesor: Ackermann, Fibonacci y Hanói (tarda ~30 s por `fibonacci(34)`). |
 
 ## Pruebas
