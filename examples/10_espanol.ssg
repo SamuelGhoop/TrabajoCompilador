@@ -1,0 +1,53 @@
+// El lenguaje en español: cada palabra reservada y cada función integrada
+// tiene también un nombre en español. Se pueden mezclar con las de inglés.
+// Ejecutar: npm start -- examples/10_espanol.ssg
+//
+//   sea = let          funcion = function     retorna = return
+//   si = if            sinosi = elif          sino = else
+//   mientras = while   para = for             verdadero / falso = true / false
+//   imprimir = print   longitud = len         texto = str      entero = int
+//   tipo = type        primero / ultimo / resto / agregar = first / last / rest / push
+
+sea nombre = "Kyra";
+sea edad = 3;
+imprimir("Hola,", nombre, "tiene", edad, "años");
+
+// Funciones, condicionales y recursión.
+sea factorial = funcion(n) {
+    si (n <= 1) {
+        retorna 1;
+    }
+    retorna n * factorial(n - 1);
+};
+imprimir("factorial de 6:", factorial(6));
+
+sea clasificar = funcion(nota) {
+    si (nota >= 90) { "excelente" } sinosi (nota >= 70) { "aprobado" } sino { "reprobado" }
+};
+imprimir("85 es", clasificar(85));
+
+// Ciclos.
+sea cuenta = "";
+para (sea i = 3; i > 0; i = i - 1) {
+    cuenta = cuenta + texto(i) + " ";
+}
+imprimir(cuenta + "¡despegue!");
+
+sea n = 0;
+mientras (n < 3) {
+    n = n + 1;
+}
+imprimir("el ciclo dio", n, "vueltas");
+
+// Booleanos y funciones integradas.
+sea esBoston = verdadero;
+imprimir("¿es boston terrier?", esBoston && !falso);
+sea juguetes = ["pelota", "hueso"];
+juguetes = agregar(juguetes, "lazo");
+imprimir("juguetes:", juguetes, "cantidad:", longitud(juguetes));
+imprimir("el primero es", primero(juguetes), "y el último", ultimo(juguetes));
+imprimir("entero de 41 más 1:", entero("41") + 1, "de tipo", tipo(edad));
+
+// Se puede mezclar con las palabras en inglés.
+let mezcla = function(x) { si (x > 0) { "positivo" } else { "no positivo" } };
+imprimir("mezcla:", mezcla(5));
