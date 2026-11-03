@@ -1,0 +1,7 @@
+// Los comentarios se ignoran, también al final de una línea.
+let a = 1; // a vale 1
+// let a = 2;
+let b = a +
+    2;      // una expresión puede ocupar varias líneas
+// Si el programa termina en una expresión, se muestra su valor.
+a * 10 + b
