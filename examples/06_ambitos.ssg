@@ -1,0 +1,60 @@
+// Ámbitos: variables globales y locales, y variables con el mismo nombre en
+// distintos ámbitos.
+// Ejecutar: npm start -- examples/06_ambitos.ssg
+//
+// Regla: cada LLAMADA a una función crea un ámbito local nuevo. Al buscar
+// una variable se mira primero en el ámbito local y luego hacia afuera,
+// hasta el global. Los bloques de if, while y for NO crean ámbitos.
+
+let x = "global";
+
+// 1. Un parámetro con el mismo nombre que una global la TAPA solo adentro.
+let conParametro = function(x) {
+    print("  dentro (parámetro):", x);
+};
+conParametro("parámetro");
+print("afuera sigue:", x);
+
+// 2. let dentro de una función crea una variable LOCAL nueva.
+let conLet = function() {
+    let x = "local";
+    print("  dentro (let):", x);
+};
+conLet();
+print("afuera sigue:", x);
+
+// 3. Sin let, la asignación busca la variable hacia afuera y cambia la global.
+let sinLet = function() {
+    x = "cambiada desde la función";
+};
+sinLet();
+print("afuera ahora:", x);
+
+// 4. Las variables locales no existen fuera de su función.
+let contador = function() {
+    let soloAdentro = 1;
+    soloAdentro + 1
+};
+print("contador() =", contador());
+// (Usar soloAdentro aquí daría: identificador no definido: soloAdentro)
+
+// 5. Cada llamada recursiva tiene su propio ámbito: la n de una llamada no
+//    pisa la n de otra.
+let cuentaRegresiva = function(n) {
+    if (n == 0) {
+        return "¡despegue!";
+    }
+    let resto = cuentaRegresiva(n - 1);
+    return str(n) + " " + resto;
+};
+print(cuentaRegresiva(5));
+
+// 6. Una función ve las variables del lugar donde se DEFINIÓ, no de donde se
+//    llama.
+let nivel = "global";
+let mostrarNivel = function() { nivel };
+let llamarDesdeOtroAmbito = function() {
+    let nivel = "local de la llamadora";
+    mostrarNivel()
+};
+print("mostrarNivel() ve:", llamarDesdeOtroAmbito());
