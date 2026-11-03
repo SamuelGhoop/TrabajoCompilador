@@ -57,9 +57,19 @@ function ejecutarEnHilo(pedido: Pedido, cancelar: AbortSignal): Promise<Respuest
 	});
 }
 
-// ejemplos devuelve los programas de examples/ para el menú de la interfaz.
-function ejemplos(): { nombre: string; codigo: string }[] {
-	const carpeta = new URL("examples/", raiz);
+// ejemplos devuelve los programas para el menú de la interfaz, en dos
+// grupos: los normales (examples/) y los mismos en parce (examples/parce/).
+function ejemplos(): { normal: Ejemplo[]; colombiano: Ejemplo[] } {
+	return { normal: leerEjemplos("examples/"), colombiano: leerEjemplos("examples/parce/") };
+}
+
+interface Ejemplo {
+	nombre: string;
+	codigo: string;
+}
+
+function leerEjemplos(ruta: string): Ejemplo[] {
+	const carpeta = new URL(ruta, raiz);
 	return readdirSync(carpeta)
 		.filter((f) => f.endsWith(".ssg"))
 		.sort()
