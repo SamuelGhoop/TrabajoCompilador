@@ -17,7 +17,6 @@ import { readdirSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 
 import { crearHilo } from "../hilo";
-import { kyra } from "../kyra";
 import type { Pedido, Respuesta } from "./ejecutor";
 
 const PUERTO = Number(process.env.PORT ?? 4747);
@@ -93,9 +92,6 @@ const servidor = createServer(async (req, res) => {
 	try {
 		if (req.method === "GET" && (req.url === "/" || req.url === "/index.html")) {
 			responder(res, 200, "text/html", readFileSync(new URL("web/index.html", raiz), "utf8"));
-		} else if (req.method === "GET" && req.url === "/api/kyra") {
-			// El retrato de Kyra: el mismo de la bienvenida de la terminal.
-			responder(res, 200, "application/json", JSON.stringify(kyra));
 		} else if (req.method === "GET" && req.url === "/api/ejemplos") {
 			responder(res, 200, "application/json", JSON.stringify(ejemplos()));
 		} else if (req.method === "POST" && req.url === "/api/ejecutar") {
