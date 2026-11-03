@@ -1,0 +1,29 @@
+// Funciones integradas: print, len, first, last, rest, push y las de
+// conversión de tipos str, int y type.
+// Ejecutar: npm start -- examples/08_funciones_integradas.ssg
+
+// print escribe sus argumentos separados por espacios.
+print("Hola", "Kyra", 1, true, [1, 2]);
+
+// len: longitud de textos, arreglos y hashes.
+print("len de compilador =", len("compilador"));
+print("len([1, 2, 3]) =", len([1, 2, 3]));
+print("len de un hash con 1 clave =", len({"a": 1}));
+
+// first, last, rest, push.
+let lista = [3, 1, 4];
+print("first:", first(lista), "last:", last(lista), "rest:", rest(lista));
+print("push:", push(lista, 1));
+
+// str convierte cualquier valor en texto: útil para unir textos con números.
+let edad = 3;
+print("Kyra tiene " + str(edad) + " años");
+
+// int convierte un texto (o un booleano) en entero.
+let texto = "41";
+print("int de 41 (texto) + 1 =", int(texto) + 1);
+print("int(true) =", int(true), "int(false) =", int(false));
+
+// type dice el tipo de un valor.
+print(type(5), type("a"), type(true), type([1]), type({"a": 1}), type(print));
+print("tipo de una función:", type(function(x) { x }));
