@@ -15,9 +15,19 @@
 export type TokenType = string;
 
 // Token es la unidad mínima que genera el lexer.
+// line y column dicen dónde EMPIEZA el token en el código (contando desde
+// 1). Así los errores de cualquier etapa pueden decir dónde ocurrieron.
 export interface Token {
 	type: TokenType; // qué clase de token es (IDENT, INT, PLUS, ...)
 	literal: string; // texto exacto que se leyó del código ("x", "5", "+")
+	line: number;    // línea donde empieza el token
+	column: number;  // columna donde empieza el token
+}
+
+// posicion devuelve el texto "línea L, columna C" de un token, para los
+// mensajes de error.
+export function posicion(tok: Token): string {
+	return `línea ${tok.line}, columna ${tok.column}`;
 }
 
 // Tokens especiales
@@ -46,6 +56,10 @@ export const EQ = "==";
 export const NOT_EQ = "!=";
 export const LTE = "<=";
 export const GTE = ">=";
+
+// Operadores lógicos
+export const AND = "&&"; // y
+export const OR = "||";  // o
 
 // Delimitadores
 export const COMMA = ",";
