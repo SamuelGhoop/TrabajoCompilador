@@ -105,7 +105,7 @@ const keywords = new Map<string, TokenType>([
 	["function", FUNCTION], ["funcion", FUNCTION],  ["vuelta", FUNCTION],   // "hacer una vuelta"
 	["let", LET],           ["sea", LET],           ["parce", LET],         // "parce x = 5;"
 	["true", TRUE],         ["verdadero", TRUE],    ["deUna", TRUE],        // "¡de una!"
-	["false", FALSE],       ["falso", FALSE],       ["nanai", FALSE],       // "¡nanai cucas!"
+	["false", FALSE],       ["falso", FALSE],       ["paila", FALSE],       // "¡paila!" (mala suerte, no se pudo)
 	["for", FOR],           ["para", FOR],          ["pa", FOR],            // "pa' cada uno"
 	["while", WHILE],       ["mientras", WHILE],    ["dele", WHILE],        // "¡dele mientras...!"
 	["if", IF],             ["si", IF],             ["pilas", IF],          // "¡pilas si...!"
