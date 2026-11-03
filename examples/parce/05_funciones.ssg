@@ -1,0 +1,46 @@
+// Versión en parce de examples/05_funciones.ssg (generada con: npm run parce).
+// Funciones: definición, llamado, parámetros, valor de retorno y recursión.
+// Ejecutar: npm start -- examples/parce/05_funciones.ssg
+
+// Una función es un valor: se guarda en una variable con parce.
+parce sumar = vuelta(a, b) {
+    devuelva a + b;
+};
+diga("sumar(2, 3) =", sumar(2, 3));
+
+// Sin devuelva, la función devuelve el valor de su última expresión.
+parce cuadrado = vuelta(x) { x * x };
+diga("cuadrado(9) =", cuadrado(9));
+
+// Los argumentos pueden ser otras llamadas.
+diga("sumar(cuadrado(3), cuadrado(4)) =", sumar(cuadrado(3), cuadrado(4)));
+
+// Una función sin parámetros.
+parce saludar = vuelta() { "¡Guau!" };
+diga(saludar());
+
+// Recursión: una función que se llama a sí misma.
+parce factorial = vuelta(n) {
+    pilas (n <= 1) {
+        devuelva 1;
+    }
+    devuelva n * factorial(n - 1);
+};
+diga("factorial(10) =", factorial(10));
+
+parce fibonacci = vuelta(n) {
+    pilas (n < 2) {
+        devuelva n;
+    }
+    devuelva fibonacci(n - 1) + fibonacci(n - 2);
+};
+diga("fibonacci(15) =", fibonacci(15));
+
+// Recursión con arreglos: sumar una lista con primero y resto.
+parce sumarLista = vuelta(lista) {
+    pilas (cuantos(lista) == 0) {
+        devuelva 0;
+    }
+    devuelva primero(lista) + sumarLista(resto(lista));
+};
+diga("sumarLista([1, 2, 3, 4]) =", sumarLista([1, 2, 3, 4]));
