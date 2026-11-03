@@ -1,0 +1,2 @@
+// Error léxico: & y | solos no existen (los operadores son && y ||).
+let ok = true & false;
