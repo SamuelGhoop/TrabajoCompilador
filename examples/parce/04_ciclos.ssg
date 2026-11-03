@@ -1,0 +1,46 @@
+// Versión en parce de examples/04_ciclos.ssg (generada con: npm run parce).
+// Ciclos: dele y pa.
+// Ejecutar: npm start -- examples/parce/04_ciclos.ssg
+
+// dele repite mientras la condición sea verdadera.
+parce n = 5;
+parce factorial = 1;
+dele (n > 0) {
+    factorial = factorial * n;
+    n = n - 1;
+}
+diga("5! =", factorial);
+
+// pa al estilo C: (inicio; condición; actualización).
+parce suma = 0;
+pa (parce i = 1; i <= 10; i = i + 1) {
+    suma = suma + i;
+}
+diga("1 + 2 + ... + 10 =", suma);
+
+// Ciclos anidados: la tabla del 1 al 3.
+pa (parce fila = 1; fila <= 3; fila = fila + 1) {
+    parce linea = "";
+    pa (parce col = 1; col <= 3; col = col + 1) {
+        linea = linea + texto(fila * col) + " ";
+    }
+    diga(linea);
+}
+
+// Recorrer un arreglo con su longitud.
+parce colores = ["negro", "blanco", "atigrado"];
+pa (parce i = 0; i < cuantos(colores); i = i + 1) {
+    diga("color", i, ":", colores[i]);
+}
+
+// Un devuelva dentro de un ciclo sale de toda la función.
+parce primerMultiplo = vuelta(de, desde) {
+    parce k = desde;
+    dele (deUna) {
+        pilas (k % de == 0) {
+            devuelva k;
+        }
+        k = k + 1;
+    }
+};
+diga("primer múltiplo de 7 desde 50:", primerMultiplo(7, 50));
