@@ -141,7 +141,7 @@ export const builtins = new Map<string, object.Builtin>([
 	})],
 ]);
 
-// Nombres en español de las funciones integradas. Son la MISMA función con
+// Nombres en español (y en "parce") de las funciones integradas. Son la MISMA función con
 // otro nombre: imprimir("hola") hace lo mismo que print("hola").
 const nombresEnEspanol: [espanol: string, original: string][] = [
 	["imprimir", "print"],
@@ -153,6 +153,10 @@ const nombresEnEspanol: [espanol: string, original: string][] = [
 	["texto", "str"],
 	["entero", "int"],
 	["tipo", "type"],
+	// Y en "parce" (español colombiano):
+	["diga", "print"],   // diga("¡quiubo!")
+	["cuantos", "len"],  // cuantos([1, 2, 3])
+	["queEs", "type"],   // queEs(5) → INTEGER
 ];
 for (const [espanol, original] of nombresEnEspanol) {
 	const funcion = builtins.get(original);
