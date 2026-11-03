@@ -1,0 +1,70 @@
+// Extensiones: cierres (closures), evaluación en cortocircuito y funciones
+// de orden superior.
+// Ejecutar: npm start -- examples/09_extensiones.ssg
+
+// --- Cierres ---
+// Una función recuerda las variables del lugar donde se creó, aunque ese
+// lugar ya haya terminado.
+let crearSumador = function(n) {
+    function(x) { x + n }
+};
+let sumarDiez = crearSumador(10);
+let sumarCien = crearSumador(100);
+print("sumarDiez(5) =", sumarDiez(5));
+print("sumarCien(5) =", sumarCien(5));
+
+// Un contador que guarda su estado en una variable capturada.
+let crearContador = function() {
+    let cuenta = 0;
+    function() {
+        cuenta = cuenta + 1;
+        cuenta
+    }
+};
+let contar = crearContador();
+contar();
+contar();
+print("después de 3 llamadas:", contar());
+
+// --- Cortocircuito ---
+// && no evalúa el lado derecho si el izquierdo es falso; || no lo evalúa
+// si el izquierdo es verdadero.
+let d = 0;
+print("d != 0 && 10 / d > 1 =", d != 0 && 10 / d > 1);   // no divide por cero
+print("true || noExiste =", true || noExiste);            // noExiste ni se busca
+
+// --- Funciones de orden superior ---
+// Funciones que reciben otras funciones como argumento.
+let map = function(lista, f) {
+    let resultado = [];
+    for (let i = 0; i < len(lista); i = i + 1) {
+        resultado = push(resultado, f(lista[i]));
+    }
+    resultado
+};
+let filter = function(lista, cumple) {
+    let resultado = [];
+    for (let i = 0; i < len(lista); i = i + 1) {
+        if (cumple(lista[i])) {
+            resultado = push(resultado, lista[i]);
+        }
+    }
+    resultado
+};
+let reduce = function(lista, inicial, f) {
+    let acumulado = inicial;
+    for (let i = 0; i < len(lista); i = i + 1) {
+        acumulado = f(acumulado, lista[i]);
+    }
+    acumulado
+};
+
+let numeros = [1, 2, 3, 4, 5, 6];
+print("map doble:", map(numeros, function(x) { x * 2 }));
+print("filter pares:", filter(numeros, function(x) { x % 2 == 0 }));
+print("reduce suma:", reduce(numeros, 0, function(a, b) { a + b }));
+
+// Componer funciones: devuelve una función nueva.
+let componer = function(f, g) { function(x) { f(g(x)) } };
+let doblarYSumarDiez = componer(sumarDiez, function(x) { x * 2 });
+print("doblarYSumarDiez(4) =", doblarYSumarDiez(4));
