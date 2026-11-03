@@ -1,0 +1,23 @@
+// Cierres y funciones de orden superior.
+let crearSumador = function(n) { function(x) { x + n } };
+let masCinco = crearSumador(5);
+print(masCinco(10));
+
+let crearContador = function() {
+    let c = 0;
+    function() { c = c + 1; c }
+};
+let contar = crearContador();
+let otro = crearContador();
+contar();
+contar();
+print(contar(), otro());
+
+let aplicarDosVeces = function(f, x) { f(f(x)) };
+print(aplicarDosVeces(function(n) { n * 3 }, 2));
+
+let map = function(lista, f) {
+    if (len(lista) == 0) { return []; }
+    return [f(first(lista))] + map(rest(lista), f);
+};
+print(map([1, 2, 3], masCinco));
