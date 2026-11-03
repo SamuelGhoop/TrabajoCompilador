@@ -1,0 +1,4 @@
+// Error de ejecución: el resultado no cabe en un entero de 64 bits.
+let grande = 2 ** 62;
+print(grande);
+print(grande * 2);
