@@ -1,0 +1,19 @@
+// Funciones con parámetros, retorno y recursión.
+let factorial = function(n) { if (n <= 1) { return 1; } return n * factorial(n - 1); };
+let fibonacci = function(n) { if (n <= 1) { return n; } return fibonacci(n - 1) + fibonacci(n - 2); };
+let ackermann = function(m, n) {
+    if (m == 0) { return n + 1; }
+    if (n == 0) { return ackermann(m - 1, 1); }
+    return ackermann(m - 1, ackermann(m, n - 1));
+};
+let hanoi = function(n, origen, destino, auxiliar) {
+    if (n == 0) { return []; }
+    return hanoi(n - 1, origen, auxiliar, destino)
+        + [[origen, destino]]
+        + hanoi(n - 1, auxiliar, destino, origen);
+};
+print(factorial(20));
+print(fibonacci(20));
+print(ackermann(2, 2));
+print(len(hanoi(4, "A", "C", "B")));
+print(hanoi(2, "A", "C", "B"));
