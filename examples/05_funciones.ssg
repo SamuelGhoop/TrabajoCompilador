@@ -1,0 +1,45 @@
+// Funciones: definición, llamado, parámetros, valor de retorno y recursión.
+// Ejecutar: npm start -- examples/05_funciones.ssg
+
+// Una función es un valor: se guarda en una variable con let.
+let sumar = function(a, b) {
+    return a + b;
+};
+print("sumar(2, 3) =", sumar(2, 3));
+
+// Sin return, la función devuelve el valor de su última expresión.
+let cuadrado = function(x) { x * x };
+print("cuadrado(9) =", cuadrado(9));
+
+// Los argumentos pueden ser otras llamadas.
+print("sumar(cuadrado(3), cuadrado(4)) =", sumar(cuadrado(3), cuadrado(4)));
+
+// Una función sin parámetros.
+let saludar = function() { "¡Guau!" };
+print(saludar());
+
+// Recursión: una función que se llama a sí misma.
+let factorial = function(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+};
+print("factorial(10) =", factorial(10));
+
+let fibonacci = function(n) {
+    if (n < 2) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+};
+print("fibonacci(15) =", fibonacci(15));
+
+// Recursión con arreglos: sumar una lista con first y rest.
+let sumarLista = function(lista) {
+    if (len(lista) == 0) {
+        return 0;
+    }
+    return first(lista) + sumarLista(rest(lista));
+};
+print("sumarLista([1, 2, 3, 4]) =", sumarLista([1, 2, 3, 4]));
