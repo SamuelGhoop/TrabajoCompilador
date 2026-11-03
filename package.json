@@ -7,7 +7,8 @@
   "scripts": {
     "test": "tsx --test \"src/**/*.test.ts\" \"tests/**/*.test.ts\"",
     "check": "tsc",
-    "start": "tsx src/main.ts"
+    "start": "tsx src/main.ts",
+    "ui": "tsx src/web/servidor.ts"
   },
   "repository": {
     "type": "git",
