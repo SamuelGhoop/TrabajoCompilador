@@ -88,12 +88,32 @@ test("TestReplEvaluador", async () => {
   ]);
 
   // El let no imprime nada; la variable sigue viva en la línea siguiente.
-  assert.ok(out.includes("eval>> eval>> 14\n"));
-  assert.ok(out.includes('eval>> eval>> "Hola Kyra"\n'));
-  // print escribe sin comillas, y como devuelve null no se imprime "null".
-  assert.ok(out.includes("eval>> x vale 7\neval>> "));
-  assert.ok(out.includes("Kyra encontró un error al ejecutar:\n ( o|o )\n\tdivisión entre cero\n"));
-  assert.ok(out.includes("Kyra encontró errores de sintaxis:"));
+  assert.ok(out.includes("evaluator>> evaluator>> 14\n"));
+  assert.ok(out.includes("evaluator>> evaluator>> Hola Kyra\n"));
+  // print escribe el texto, y como devuelve null no se imprime "null".
+  assert.ok(out.includes("evaluator>> x vale 7\nevaluator>> "));
+  assert.ok(out.includes(
+    "Kyra encontró errores:\n ( o|o )\n\tError de ejecución en línea 1, columna 4: división por cero\n",
+  ));
+  assert.ok(out.includes("\tError de sintaxis en línea 1, columna 5: se esperaba IDENT"));
+});
+
+test("TestReplCargar", async () => {
+  // :cargar ejecuta un archivo completo (con funciones de varias líneas) en
+  // el entorno de la sesión: lo que define queda disponible después.
+  const out = await ejecutar([
+    "3",
+    ":cargar examples/programa.ssg",
+    "fibonacci(8)",
+    ":cargar",
+    ":cargar no/existe.ssg",
+    ":salir",
+  ]);
+
+  assert.ok(out.includes("{resultado: 24, ackermann: 7, fibonacci: 5702887, hanoi: [[A, C], "));
+  assert.ok(out.includes("evaluator>> 21\n"));
+  assert.ok(out.includes("Uso: :cargar ruta/al/archivo.ssg\n"));
+  assert.ok(out.includes("\tNo se pudo leer el archivo no/existe.ssg\n"));
 });
 
 test("TestReplEmptyInput", async () => {

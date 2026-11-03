@@ -7,33 +7,33 @@
 //	Loop  → y vuelve a empezar.
 //
 // El REPL tiene tres MODOS:
-//   - lexer:  muestra la lista de tokens de la línea.
-//   - parser: muestra el programa reconstruido y el AST en forma de árbol,
-//     o los errores de sintaxis si los hay.
-//   - eval:   ejecuta la línea y muestra el resultado. Las variables y
+//   - lexer:     muestra la lista de tokens de la línea.
+//   - parser:    muestra el programa reconstruido y el AST en forma de
+//     árbol, o los errores si los hay.
+//   - evaluator: ejecuta la línea y muestra el resultado. Las variables y
 //     funciones se recuerdan de una línea a otra.
 //
 // El modo se elige al iniciar y se puede cambiar con los comandos :lexer,
-// :parser y :eval. Los comandos del REPL empiezan con ':' para no confundirse con
-// código del lenguaje.
+// :parser y :evaluator. El comando :cargar ejecuta un archivo completo.
+// Los comandos del REPL empiezan con ':' para no confundirse con código
+// del lenguaje.
 import * as readline from "node:readline";
 import type { Readable, Writable } from "node:stream";
 
 import * as ast from "../ast/ast";
-import { evaluar } from "../evaluator/evaluator";
+import { ejecutar, ejecutarArchivo, mostrarValor, type Resultado } from "../interprete";
 import { Lexer } from "../lexer/lexer";
 import { Environment } from "../object/environment";
-import * as object from "../object/object";
 import { Parser } from "../parser/parser";
 import * as token from "../token/token";
 
 // Modos de funcionamiento del REPL. Se usa el mismo texto en el prompt
-// ("lexer>> ", "parser>> " o "eval>> ") para que el usuario sepa en qué
-// modo está.
+// ("lexer>> ", "parser>> " o "evaluator>> ") para que el usuario sepa en
+// qué modo está.
 const modoLexer = "lexer";
 const modoParser = "parser";
-const modoEval = "eval";
-type Modo = typeof modoLexer | typeof modoParser | typeof modoEval;
+const modoEvaluator = "evaluator";
+type Modo = typeof modoLexer | typeof modoParser | typeof modoEvaluator;
 
 // LectorDeLineas entrega la entrada línea por línea; devuelve null cuando
 // la entrada se termina (por ejemplo al presionar Ctrl+D). Cumple el papel
@@ -91,6 +91,18 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 
 			// 3. Si la línea empieza con ':' es un comando del REPL, no código.
 			if (line.startsWith(":")) {
+				// :cargar recibe el resto de la línea como ruta, por eso se
+				// reconoce antes del switch (los demás comandos no llevan nada más).
+				if (line === ":cargar" || line.startsWith(":cargar ")) {
+					const ruta = line.slice(":cargar".length).trim();
+					if (ruta === "") {
+						escribir("Uso: :cargar ruta/al/archivo.ssg\n");
+					} else {
+						mostrarResultado(escribir, ejecutarArchivo(ruta, env));
+					}
+					continue;
+				}
+
 				switch (line) {
 					case ":lexer":
 						modo = modoLexer;
@@ -100,9 +112,10 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 						modo = modoParser;
 						escribir("Modo parser: se mostrará el AST.\n");
 						break;
+					case ":evaluator":
 					case ":eval":
-						modo = modoEval;
-						escribir("Modo evaluador: se ejecutará el código.\n");
+						modo = modoEvaluator;
+						escribir("Modo evaluator: se ejecutará el código.\n");
 						break;
 					case ":ayuda":
 						imprimirAyuda(escribir);
@@ -122,7 +135,7 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 			} else if (modo === modoParser) {
 				probarParser(escribir, line);
 			} else {
-				probarEvaluador(escribir, line, env);
+				mostrarResultado(escribir, ejecutar(line, env));
 			}
 		}
 	} finally {
@@ -132,7 +145,8 @@ export async function start(input: Readable, output: Writable): Promise<void> {
 
 // elegirModo muestra un menú para que el usuario elija si quiere probar
 // el lexer, el parser o el evaluador. Acepta "1"/"lexer", "2"/"parser" o
-// "3"/"eval" (sin importar mayúsculas). Si la respuesta no es válida, vuelve a preguntar.
+// "3"/"evaluator" (sin importar mayúsculas). Si la respuesta no es válida,
+// vuelve a preguntar.
 //
 // Devuelve el modo elegido, o null si la entrada se terminó antes de
 // elegir (en ese caso el REPL debe cerrarse).
@@ -141,7 +155,7 @@ async function elegirModo(leerLinea: LectorDeLineas, escribir: (t: string) => vo
 		escribir("\n¿Qué quieres probar?\n");
 		escribir("  1) Lexer  (ver los tokens)\n");
 		escribir("  2) Parser (ver el AST)\n");
-		escribir("  3) Evaluador (ejecutar el código)\n");
+		escribir("  3) Evaluator (ejecutar el código)\n");
 		escribir("Opción: ");
 
 		const respuesta = await leerLinea();
@@ -157,8 +171,9 @@ async function elegirModo(leerLinea: LectorDeLineas, escribir: (t: string) => vo
 			case "parser":
 				return modoParser;
 			case "3":
+			case "evaluator":
 			case "eval":
-				return modoEval;
+				return modoEvaluator;
 			default:
 				escribir("Opción no válida, escribe 1, 2 o 3.\n");
 		}
@@ -168,11 +183,12 @@ async function elegirModo(leerLinea: LectorDeLineas, escribir: (t: string) => vo
 // imprimirAyuda muestra la lista de comandos disponibles en el REPL.
 function imprimirAyuda(escribir: (t: string) => void): void {
 	escribir("\nComandos:\n");
-	escribir("  :lexer   cambiar a modo lexer\n");
-	escribir("  :parser  cambiar a modo parser\n");
-	escribir("  :eval    cambiar a modo evaluador\n");
-	escribir("  :ayuda   mostrar esta ayuda\n");
-	escribir("  :salir   salir del REPL\n");
+	escribir("  :lexer               cambiar a modo lexer\n");
+	escribir("  :parser              cambiar a modo parser\n");
+	escribir("  :evaluator           cambiar a modo evaluator (también :eval)\n");
+	escribir("  :cargar archivo.ssg  ejecutar un archivo en el entorno actual\n");
+	escribir("  :ayuda               mostrar esta ayuda\n");
+	escribir("  :salir               salir del REPL\n");
 	escribir("\n");
 }
 
@@ -201,7 +217,7 @@ function probarParser(escribir: (t: string) => void, line: string): void {
 	const program = p.parseProgram();       // y construye el AST
 
 	if (p.getErrors().length > 0) {
-		imprimirErroresParser(escribir, p.getErrors());
+		imprimirErrores(escribir, p.getErrors());
 		return;
 	}
 
@@ -211,37 +227,27 @@ function probarParser(escribir: (t: string) => void, line: string): void {
 	imprimirArbol(escribir, program, "", "");
 }
 
-// probarEvaluador pasa la línea por el lexer, el parser y el evaluador.
-//   - Si hay errores de sintaxis, los muestra y no ejecuta nada.
-//   - Si la ejecución da un error, lo muestra junto con Kyra.
-//   - Si no, muestra el resultado. Cuando el resultado es null (por ejemplo
-//     tras un let o un ciclo) no se muestra nada, para no llenar la pantalla
-//     de "null".
-function probarEvaluador(escribir: (t: string) => void, line: string, env: Environment): void {
-	const p = new Parser(new Lexer(line));
-	const program = p.parseProgram();
-
-	if (p.getErrors().length > 0) {
-		imprimirErroresParser(escribir, p.getErrors());
+// mostrarResultado muestra lo que produjo ejecutar código (una línea en modo
+// evaluator, o un archivo con :cargar):
+//   - si hubo errores (léxicos, de sintaxis o de ejecución), los muestra;
+//   - si no, muestra el valor final. Cuando es null (por ejemplo tras un let
+//     o un print) no se muestra nada, para no llenar la pantalla de "null".
+function mostrarResultado(escribir: (t: string) => void, resultado: Resultado): void {
+	if (resultado.errores.length > 0) {
+		imprimirErrores(escribir, resultado.errores);
 		return;
 	}
-
-	const result = evaluar(program, env);
-	if (result instanceof object.ErrorObj) {
-		escribir(" |\\_._/|   ¡Guau! Kyra encontró un error al ejecutar:\n");
-		escribir(" ( o|o )\n");
-		escribir(`\t${result.message}\n`);
-		return;
-	}
-	if (result !== object.NULL) {
-		escribir(result.inspect() + "\n");
+	const texto = mostrarValor(resultado.valor);
+	if (texto !== null) {
+		escribir(texto + "\n");
 	}
 }
 
-// imprimirErroresParser muestra los errores de sintaxis encontrados, uno
-// por renglón, junto con Kyra, la mascota del compilador.
-function imprimirErroresParser(escribir: (t: string) => void, errors: string[]): void {
-	escribir(" |\\_._/|   ¡Guau! Kyra encontró errores de sintaxis:\n");
+// imprimirErrores muestra los errores encontrados, uno por renglón, junto
+// con Kyra, la mascota del compilador. Cada mensaje ya dice en qué etapa
+// ocurrió (léxico, sintaxis o ejecución) y en qué línea y columna.
+function imprimirErrores(escribir: (t: string) => void, errors: string[]): void {
+	escribir(" |\\_._/|   ¡Guau! Kyra encontró errores:\n");
 	escribir(" ( o|o )\n");
 	for (const msg of errors) {
 		escribir(`\t${msg}\n`);
