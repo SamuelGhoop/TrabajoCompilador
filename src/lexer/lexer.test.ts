@@ -200,7 +200,7 @@ test("TestSpanishKeywords", () => {
   const parce: [string, string][] = [
     ["parce", "let"], ["vuelta", "function"], ["pilas", "if"], ["osea", "elif"],
     ["deResto", "else"], ["dele", "while"], ["pa", "for"], ["devuelva", "return"],
-    ["deUna", "true"], ["nanai", "false"],
+    ["deUna", "true"], ["paila", "false"],
   ];
   for (const [colombiano, ingles] of parce) {
     assert.equal(new Lexer(colombiano).nextToken().type, new Lexer(ingles).nextToken().type, colombiano);
