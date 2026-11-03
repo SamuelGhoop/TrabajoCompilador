@@ -1,0 +1,28 @@
+// Versión en parce de examples/01_variables.ssg (generada con: npm run parce).
+// Variables y asignación
+// Ejecutar: npm start -- examples/parce/01_variables.ssg
+
+// parce DECLARA una variable nueva.
+parce nombre = "Kyra";
+parce edad = 3;
+parce esBoston = deUna;
+
+// Consultar una variable es escribir su nombre.
+diga("nombre:", nombre);
+diga("edad:", edad);
+diga("es boston terrier:", esBoston);
+
+// Sin parce, = CAMBIA una variable que ya existe.
+edad = edad + 1;
+diga("edad después del cumpleaños:", edad);
+
+// La asignación devuelve el valor asignado, así que se puede encadenar:
+// a = b = 0 es a = (b = 0).
+parce a = 5;
+parce b = 5;
+a = b = 0;
+diga("a y b:", a, b);
+
+// Volver a usar parce con el mismo nombre declara la variable de nuevo.
+parce edad = "tres";
+diga("edad ahora es un texto:", edad, "de tipo", queEs(edad));
