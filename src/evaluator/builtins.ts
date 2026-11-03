@@ -8,6 +8,8 @@
 //	Longitud:     len
 //	Arreglos:     first, last, rest, push
 //	Conversión:   str, int, type
+//	Sorpresa:     kyra
+import { kyra } from "../kyra";
 import type { Environment } from "../object/environment";
 import * as object from "../object/object";
 
@@ -124,4 +126,14 @@ export const builtins = new Map<string, object.Builtin>([
 	// type devuelve el nombre del tipo de un valor como texto.
 	//	type(5) → "INTEGER"   type("a") → "STRING"   type([]) → "ARRAY"
 	["type", unArgumento((arg) => new object.StringObj(arg.type()))],
+
+	// kyra es una sorpresa: dibuja a Kyra, la mascota del compilador, y ladra.
+	// No recibe argumentos y devuelve null.
+	["kyra", new object.Builtin((env: Environment, ...args) => {
+		if (args.length !== 0) {
+			return cantidadIncorrecta(0, args.length);
+		}
+		env.escribir(kyra.join("\n") + "\n\n        ¡Guau, guau! Soy Kyra, la boston terrier de este compilador.\n");
+		return object.NULL;
+	})],
 ]);
