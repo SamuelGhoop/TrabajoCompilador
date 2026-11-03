@@ -2,7 +2,7 @@
 
 El examen es individual y vale el 40 %. Según el enunciado, puede preguntar: qué hace una función del código y por qué, cómo se refleja la gramática en el parser, qué tokens y qué AST produce una entrada, qué resultado da un programa (con ámbitos, recursión o precedencia), en qué etapa se detecta un error, y cómo agregar o cambiar una construcción. Esta guía sigue ese orden. Todas las respuestas se comprobaron ejecutando el intérprete.
 
-**Cómo estudiar:** abran `npm start` y prueben cada ejemplo en los tres modos (`:lexer`, `:parser`, `:evaluator`). Lean el código de cada etapa con esta guía al lado.
+**Cómo estudiar:** abran `npm start` y prueben cada ejemplo en los tres modos (`:lexer`, `:parser`, `:evaluator`). Lean el código de cada etapa con esta guía al lado. Para las preguntas de recursión, usen `:traza`: muestra cada llamada, lo que hizo dentro y lo que devolvió (por ejemplo, defina `fibonacci` y escriba `:traza fibonacci(4)`).
 
 ---
 
