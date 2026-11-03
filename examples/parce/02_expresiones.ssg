@@ -1,0 +1,32 @@
+// Versión en parce de examples/02_expresiones.ssg (generada con: npm run parce).
+// Expresiones: aritméticas, relacionales y lógicas, con precedencia y
+// asociatividad.
+// Ejecutar: npm start -- examples/parce/02_expresiones.ssg
+
+// Aritmética: * / % van antes que + -.
+diga("1 + 2 * 3 =", 1 + 2 * 3);         // 7, no 9
+diga("(1 + 2) * 3 =", (1 + 2) * 3);     // los paréntesis cambian el orden
+diga("10 - 4 - 3 =", 10 - 4 - 3);       // 3: la resta asocia por la izquierda, (10 - 4) - 3
+diga("7 / 2 =", 7 / 2);                 // 3: la división es entera
+diga("17 % 5 =", 17 % 5);               // 2: el resto de la división
+
+// La potencia es la excepción: asocia por la DERECHA, como en matemáticas.
+diga("2 ** 3 ** 2 =", 2 ** 3 ** 2);     // 2 ** 9 = 512, no 8 ** 2 = 64
+// Y ata más fuerte que el menos de adelante: -2 ** 2 es -(2 ** 2).
+diga("-2 ** 2 =", -2 ** 2);             // -4
+
+// Relacionales: producen deUna o paila.
+diga("3 < 5:", 3 < 5);
+diga("3 >= 5:", 3 >= 5);
+diga("4 == 4:", 4 == 4);
+diga("a != b (textos):", "a" != "b");
+
+// Lógicas: && (y), || (o), ! (no). Van DESPUÉS de las comparaciones:
+// x > 0 && x < 10 es (x > 0) && (x < 10).
+parce x = 7;
+diga("x entre 0 y 10:", x > 0 && x < 10);
+diga("x fuera de 0 a 5:", x < 0 || x > 5);
+diga("no es cierto que x == 7:", !(x == 7));
+
+// && ata más que ||: deUna || paila && paila es deUna || (paila && paila).
+diga("true || false && false =", deUna || paila && paila);
