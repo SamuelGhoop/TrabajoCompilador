@@ -49,8 +49,8 @@ export function isHashable(obj: Obj): obj is Hashable {
 // Valores simples
 // ---------------------------------------------------------------------------
 
-// Integer es un número entero. Se usa bigint, igual que en el AST, así que
-// no hay desbordamiento: 2 ** 100 da el número exacto.
+// Integer es un número entero de 64 bits con signo (como el int64 de Go). Se
+// guarda en un bigint; el evaluador revisa que cada resultado quepa en 64 bits.
 export class Integer implements Hashable {
 	constructor(public value: bigint) {}
 
@@ -81,8 +81,8 @@ export class BooleanObj implements Hashable {
 	}
 }
 
-// StringObj es un texto. inspect lo muestra con comillas para que en el
-// REPL se distinga "5" (texto) de 5 (número).
+// StringObj es un texto. inspect lo muestra sin comillas, igual que el
+// evaluador del profesor: "mayor" se muestra como mayor.
 export class StringObj implements Hashable {
 	constructor(public value: string) {}
 
@@ -90,7 +90,7 @@ export class StringObj implements Hashable {
 		return STRING_OBJ;
 	}
 	inspect(): string {
-		return JSON.stringify(this.value);
+		return this.value;
 	}
 	hashKey(): string {
 		return `${STRING_OBJ}:${this.value}`;
@@ -129,9 +129,16 @@ export class ReturnValue implements Obj {
 	}
 }
 
-// ErrorObj es un error de ejecución (por ejemplo "división entre cero").
+// ErrorObj es un error de ejecución (por ejemplo "división por cero").
 // Igual que ReturnValue, detiene la ejecución y sube hasta el programa.
+//
+// line y column dicen en qué parte del código ocurrió. Quien crea el error
+// no las conoce; las pone el evaluador con el token del nodo que lo produjo
+// (ver evaluar en evaluator.ts).
 export class ErrorObj implements Obj {
+	line: number | null = null;
+	column: number | null = null;
+
 	constructor(public message: string) {}
 
 	type(): ObjectType {
@@ -139,6 +146,15 @@ export class ErrorObj implements Obj {
 	}
 	inspect(): string {
 		return `ERROR: ${this.message}`;
+	}
+
+	// describir devuelve el mensaje completo para el usuario, con la etapa
+	// y la posición: "Error de ejecución en línea 3, columna 9: división por cero".
+	describir(): string {
+		if (this.line === null) {
+			return `Error de ejecución: ${this.message}`;
+		}
+		return `Error de ejecución en línea ${this.line}, columna ${this.column}: ${this.message}`;
 	}
 }
 
