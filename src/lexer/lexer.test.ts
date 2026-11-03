@@ -186,6 +186,22 @@ test("TestLogicalOperators", () => {
   ]);
 });
 
+test("TestSpanishKeywords", () => {
+  // Cada palabra en español produce el MISMO token que su versión en inglés.
+  const pares: [string, string][] = [
+    ["sea", "let"], ["funcion", "function"], ["si", "if"], ["sinosi", "elif"],
+    ["sino", "else"], ["mientras", "while"], ["para", "for"], ["retorna", "return"],
+    ["verdadero", "true"], ["falso", "false"],
+  ];
+  for (const [espanol, ingles] of pares) {
+    assert.equal(new Lexer(espanol).nextToken().type, new Lexer(ingles).nextToken().type, espanol);
+  }
+  // El literal conserva lo que se escribió.
+  assert.deepEqual(tokens("sea x = 5;")[0], [token.LET, "sea", 1, 1]);
+  // Una palabra parecida que no es reservada sigue siendo un identificador.
+  assert.equal(new Lexer("seas").nextToken().type, token.IDENT);
+});
+
 test("TestPositions", () => {
   // Las líneas y columnas empiezan en 1; un salto de línea pasa a la
   // siguiente línea, columna 1. La tabulación cuenta como una columna.
