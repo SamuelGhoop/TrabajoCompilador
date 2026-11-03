@@ -56,7 +56,7 @@ function mostrarBienvenida(): void {
 	console.log(linea());
 	console.log(borde("╚" + "═".repeat(ANCHO) + "╝") + "\n");
 	// Se obtiene el usuario del sistema para saludarlo por su nombre.
-	console.log(`¡Hola ${os.userInfo().username}! Estás en KyraCompiler.`);
+	console.log(`¡Quiubo, ${os.userInfo().username}! Estás en KyraCompiler, parce.`);
 	console.log("Escribe algún comando y deja que la magia ocurra...");
 }
 
