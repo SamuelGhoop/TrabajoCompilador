@@ -157,6 +157,10 @@ const nombresEnEspanol: [espanol: string, original: string][] = [
 	["diga", "print"],   // diga("¡quiubo!")
 	["cuantos", "len"],  // cuantos([1, 2, 3])
 	["queEs", "type"],   // queEs(5) → INTEGER
+	// Y Kyra con mayúscula, como se escribe su nombre (los nombres distinguen
+	// mayúsculas: kyra y Kyra serían identificadores distintos).
+	["Kyra", "kyra"],
+	["KYRA", "kyra"],
 ];
 for (const [espanol, original] of nombresEnEspanol) {
 	const funcion = builtins.get(original);

@@ -258,6 +258,9 @@ test("TestTypeConversion", () => {
     ['type({"a": 1})', "HASH"],
     ["type(function(x) { x })", "FUNCTION"],
     ["type(len)", "BUILTIN"],
+    // kyra() también se puede escribir con mayúscula, como su nombre.
+    ["type(Kyra)", "BUILTIN"],
+    ["type(KYRA)", "BUILTIN"],
   ]);
 });
 
