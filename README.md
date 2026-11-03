@@ -90,7 +90,7 @@ Abre **http://localhost:4747** en el navegador. Es una terminal de fósforo verd
 
 - **Editor** a la izquierda: programas de varias líneas, con números de línea; la línea de un error se marca en rojo.
 - **Pestañas** a la derecha con las tres etapas del mismo código: **[SALIDA]** (lo que escribe `print` y el valor final, o los errores con Kyra), **[TOKENS]** (lexer), **[AST]** (parser) y **[TRAZA]** (árbol de llamadas).
-- **[EJEMPLOS…]** carga cualquier programa de `examples/`.
+- **[EJEMPLOS ▾]** (o `F2`) abre un menú para elegir entre **[NORMAL]** y **[COLOMBIANO]** (los mismos ejemplos escritos en parce), con vista previa del código. Se maneja con el ratón o con `↑ ↓` (mover), `← →` (normal / colombiano), `Enter` (cargar) y `Esc` (cerrar).
 - **Atajos:** `Ctrl+Enter` ejecuta, `Esc` detiene y `F1` abre la ayuda.
 
 El navegador no ejecuta el lenguaje: le manda el código al servidor, que lo corre con **el mismo intérprete** del REPL en un hilo con pila de 256 MB. Por eso no tiene el límite de recursión del navegador (en la interfaz también funcionan 50 000 llamadas anidadas) y da exactamente los mismos resultados que la terminal. Cada programa tiene un tiempo límite de 60 s, y **[■ DETENER]** lo corta (por ejemplo, un ciclo infinito). El servidor solo escucha en `127.0.0.1`.
@@ -190,7 +190,16 @@ La carpeta [`examples/`](examples) tiene un programa comentado por cada caracter
 | `09_extensiones.ssg` | Cierres, cortocircuito y funciones de orden superior. |
 | `10_espanol.ssg` | El lenguaje con las palabras en español. |
 | `11_parce.ssg` | El lenguaje en "parce" (español colombiano). |
+| `12_caras_de_kyra.ssg` | Galería de las caras de Kyra: qué error provoca cada una y en qué etapa se detecta. |
 | `programa.ssg` | Ejemplo del profesor: Ackermann, Fibonacci y Hanói (tarda ~30 s por `fibonacci(34)`). |
+
+**Los mismos ejemplos en parce:** [`examples/parce/`](examples/parce) tiene cada ejemplo escrito en parce (`parce`, `vuelta`, `pilas`, `diga`, …). Se generan solos con:
+
+```bash
+npm run parce
+```
+
+El script (`scripts/a-parce.ts`) cambia las palabras del código y de los comentarios, pero no los textos entre comillas. Así cada versión en parce imprime **exactamente lo mismo** que la original, y `npm test` lo comprueba. Si se cambia un ejemplo, hay que volver a correr `npm run parce`.
 
 ## Pruebas
 
