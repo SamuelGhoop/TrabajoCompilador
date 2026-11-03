@@ -1,0 +1,66 @@
+// Módulo interprete junta las tres etapas para ejecutar un programa completo:
+//
+//	código ──lexer──▶ tokens ──parser──▶ AST ──evaluador──▶ resultado
+//
+// Lo usan el REPL (modo evaluador y :cargar), la ejecución de archivos desde
+// la línea de comandos y las pruebas de tests/. Así las tres formas de
+// ejecutar código se comportan exactamente igual.
+import { readFileSync } from "node:fs";
+
+import { evaluar } from "./evaluator/evaluator";
+import { Lexer } from "./lexer/lexer";
+import type { Environment } from "./object/environment";
+import * as object from "./object/object";
+import { Parser } from "./parser/parser";
+
+// Resultado de ejecutar un programa:
+//   - errores: los mensajes de error, ya listos para mostrar. Si hay errores
+//     léxicos o de sintaxis, el programa NO se ejecuta; si hay un error de
+//     ejecución, el programa se detuvo en ese punto.
+//   - valor: el valor de la última sentencia (null si hubo errores).
+export interface Resultado {
+	errores: string[];
+	valor: object.Obj | null;
+}
+
+// ejecutar analiza el código completo y, solo si no tiene errores léxicos ni
+// de sintaxis, lo ejecuta en el entorno dado. Recibir el entorno permite que
+// el REPL conserve las variables de una línea a otra.
+export function ejecutar(codigo: string, env: Environment): Resultado {
+	const parser = new Parser(new Lexer(codigo));
+	const program = parser.parseProgram();
+
+	const errores = parser.getErrors();
+	if (errores.length > 0) {
+		return { errores, valor: null };
+	}
+
+	const valor = evaluar(program, env);
+	if (valor instanceof object.ErrorObj) {
+		return { errores: [valor.describir()], valor: null };
+	}
+	return { errores: [], valor };
+}
+
+// ejecutarArchivo lee un archivo de código y lo ejecuta completo. A
+// diferencia del REPL, que procesa una línea a la vez, aquí una función o un
+// bloque pueden ocupar varias líneas.
+export function ejecutarArchivo(ruta: string, env: Environment): Resultado {
+	let codigo: string;
+	try {
+		codigo = readFileSync(ruta, "utf8");
+	} catch {
+		return { errores: [`No se pudo leer el archivo ${ruta}`], valor: null };
+	}
+	return ejecutar(codigo, env);
+}
+
+// mostrarValor devuelve lo que se imprime como resultado de un programa: el
+// valor de la última sentencia, salvo que sea null (por ejemplo, cuando el
+// programa termina con un let o un print), que no se muestra.
+export function mostrarValor(valor: object.Obj | null): string | null {
+	if (valor === null || valor === object.NULL) {
+		return null;
+	}
+	return valor.inspect();
+}
