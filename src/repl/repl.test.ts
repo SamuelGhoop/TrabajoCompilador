@@ -103,14 +103,16 @@ test("TestReplCargar", async () => {
   // el entorno de la sesión: lo que define queda disponible después.
   const out = await ejecutar([
     "3",
-    ":cargar examples/programa.ssg",
+    ":cargar tests/validos/05_recursion.ssg",
     "fibonacci(8)",
     ":cargar",
     ":cargar no/existe.ssg",
     ":salir",
   ]);
 
-  assert.ok(out.includes("{resultado: 24, ackermann: 7, fibonacci: 5702887, hanoi: [[A, C], "));
+  // Lo que imprime el archivo aparece al cargarlo...
+  assert.ok(out.includes("2432902008176640000\n6765\n7\n15\n"));
+  // ...y sus funciones quedan disponibles en la sesión.
   assert.ok(out.includes("evaluator>> 21\n"));
   assert.ok(out.includes("Uso: :cargar ruta/al/archivo.ssg\n"));
   assert.ok(out.includes("\tNo se pudo leer el archivo no/existe.ssg\n"));
