@@ -92,22 +92,26 @@ export const BREAK = "BREAK";
 // en este mapa para saber si es reservada. Para agregar una palabra
 // reservada nueva basta con definir su constante arriba y añadirla aquí.
 //
-// Cada palabra tiene también una versión en ESPAÑOL que produce el MISMO
-// token: "sea x = 5;" y "let x = 5;" son exactamente lo mismo para el
-// parser y el evaluador, que nunca ven el texto, solo el tipo de token. Se
-// conservan las palabras en inglés para que los programas del curso sigan
-// funcionando. (Sin tildes: el lexer solo acepta letras ASCII.)
+// Cada palabra tiene además una versión en ESPAÑOL y otra en "PARCE"
+// (español colombiano) que producen el MISMO token: "let x = 5;",
+// "sea x = 5;" y "parce x = 5;" son exactamente lo mismo para el parser y
+// el evaluador, que nunca ven el texto, solo el tipo de token. Se conservan
+// las palabras en inglés para que los programas del curso sigan
+// funcionando. (Una sola palabra, sin tildes ni espacios: el lexer solo
+// acepta letras ASCII en las palabras, por eso "de una" se escribe deUna.)
+//
+//	inglés      español      parce
 const keywords = new Map<string, TokenType>([
-	["function", FUNCTION], ["funcion", FUNCTION],
-	["let", LET],           ["sea", LET],
-	["true", TRUE],         ["verdadero", TRUE],
-	["false", FALSE],       ["falso", FALSE],
-	["for", FOR],           ["para", FOR],
-	["while", WHILE],       ["mientras", WHILE],
-	["if", IF],             ["si", IF],
-	["else", ELSE],         ["sino", ELSE],
-	["elif", ELIF],         ["sinosi", ELIF],
-	["return", RETURN],     ["retorna", RETURN],
+	["function", FUNCTION], ["funcion", FUNCTION],  ["vuelta", FUNCTION],   // "hacer una vuelta"
+	["let", LET],           ["sea", LET],           ["parce", LET],         // "parce x = 5;"
+	["true", TRUE],         ["verdadero", TRUE],    ["deUna", TRUE],        // "¡de una!"
+	["false", FALSE],       ["falso", FALSE],       ["nanai", FALSE],       // "¡nanai cucas!"
+	["for", FOR],           ["para", FOR],          ["pa", FOR],            // "pa' cada uno"
+	["while", WHILE],       ["mientras", WHILE],    ["dele", WHILE],        // "¡dele mientras...!"
+	["if", IF],             ["si", IF],             ["pilas", IF],          // "¡pilas si...!"
+	["else", ELSE],         ["sino", ELSE],         ["deResto", ELSE],      // "de resto..."
+	["elif", ELIF],         ["sinosi", ELIF],       ["osea", ELIF],         // "o sea, si..."
+	["return", RETURN],     ["retorna", RETURN],    ["devuelva", RETURN],
 	["break", BREAK],
 ]);
 
