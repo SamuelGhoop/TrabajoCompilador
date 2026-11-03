@@ -1,0 +1,13 @@
+// Las palabras en "parce" producen los mismos tokens que las de inglés.
+parce fib = vuelta(n) { pilas (n < 2) { devuelva n; } devuelva fib(n - 1) + fib(n - 2); };
+diga(fib(12));
+parce signo = vuelta(n) { pilas (n > 0) { "+" } osea (n < 0) { "-" } deResto { "0" } };
+diga(signo(8), signo(-8), signo(0));
+parce suma = 0;
+pa (parce i = 1; i <= 5; i = i + 1) { suma = suma + i; }
+parce vueltas = 0;
+dele (vueltas < 4) { vueltas = vueltas + 1; }
+diga(suma, vueltas, deUna && !nanai, cuantos([1, 2, 3]), queEs(suma));
+// Se mezcla con el inglés y con el español.
+let mezcla = funcion(x) { pilas (x) { "de una" } else { "nanai" } };
+mezcla(nanai)
