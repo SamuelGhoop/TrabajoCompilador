@@ -1,0 +1,16 @@
+// if / elif / else y condicionales anidados.
+let signo = function(n) {
+    if (n > 0) { "positivo" } elif (n < 0) { "negativo" } else { "cero" }
+};
+print(signo(5), signo(-5), signo(0));
+
+let maximo = function(a, b, c) {
+    if (a >= b) {
+        if (a >= c) { a } else { c }
+    } else {
+        if (b >= c) { b } else { c }
+    }
+};
+print(maximo(1, 2, 3), maximo(3, 2, 1), maximo(2, 3, 1));
+print(if (false) { 1 });
+print(if (0) { "0 es verdadero" } else { "0 es falso" });
