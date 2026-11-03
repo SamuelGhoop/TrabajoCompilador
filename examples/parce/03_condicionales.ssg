@@ -1,0 +1,45 @@
+// Versión en parce de examples/03_condicionales.ssg (generada con: npm run parce).
+// Condicionales: pilas, osea, deResto y condicionales anidados.
+// Ejecutar: npm start -- examples/parce/03_condicionales.ssg
+
+parce clasificar = vuelta(nota) {
+    pilas (nota >= 90) {
+        devuelva "excelente";
+    } osea (nota >= 70) {
+        devuelva "aprobado";
+    } osea (nota >= 50) {
+        devuelva "habilitación";
+    } deResto {
+        devuelva "reprobado";
+    }
+};
+
+diga(95, "->", clasificar(95));
+diga(75, "->", clasificar(75));
+diga(55, "->", clasificar(55));
+diga(20, "->", clasificar(20));
+
+// Condicionales anidados: un pilas dentro de otro.
+parce describir = vuelta(n) {
+    pilas (n >= 0) {
+        pilas (n % 2 == 0) {
+            "positivo par"
+        } deResto {
+            "positivo impar"
+        }
+    } deResto {
+        "negativo"
+    }
+};
+
+diga(4, "es", describir(4));
+diga(7, "es", describir(7));
+diga(-3, "es", describir(-3));
+
+// El pilas es una expresión: produce un valor que se puede guardar.
+parce edad = 20;
+parce etapa = pilas (edad >= 18) { "adulto" } deResto { "menor" };
+diga("con", edad, "años es", etapa);
+
+// Solo paila y null son falsos: el 0 y el texto vacío cuentan como verdaderos.
+pilas (0) { diga("el 0 cuenta como verdadero") }
