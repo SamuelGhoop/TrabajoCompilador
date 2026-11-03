@@ -9,7 +9,7 @@
 //   tipo = type        primero / ultimo / resto / agregar = first / last / rest / push
 
 sea nombre = "Kyra";
-sea edad = 3;
+sea edad = 6;
 imprimir("Hola,", nombre, "tiene", edad, "años");
 
 // Funciones, condicionales y recursión.
