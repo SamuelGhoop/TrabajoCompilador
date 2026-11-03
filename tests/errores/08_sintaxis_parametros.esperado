@@ -1,0 +1,4 @@
+Error de sintaxis en línea 2, columna 23: se esperaba ), pero se encontró IDENT ("b")
+Error de sintaxis en línea 2, columna 24: no se puede iniciar una expresión con ) (")")
+Error de sintaxis en línea 2, columna 34: se esperaba :, pero se encontró } ("}")
+Error de sintaxis en línea 2, columna 34: no se puede iniciar una expresión con } ("}")

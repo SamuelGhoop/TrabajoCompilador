@@ -1,0 +1,2 @@
+// Error de sintaxis: a los parámetros de una función les falta la coma.
+let suma = function(a b) { a + b };
