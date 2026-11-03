@@ -33,6 +33,19 @@ test("TestConContexto", () => {
   assert.equal(conContexto("Error de ejecución: desbordamiento de pila", "x"), "Error de ejecución: desbordamiento de pila");
 });
 
+test("TestContextoDeOtraLinea", () => {
+  // Si el error ocurre dentro de una función definida en OTRA ejecución (otra
+  // línea del REPL o un archivo cargado), se muestra la línea de la función,
+  // no la de la llamada.
+  const env = new Environment();
+  ejecutar("let dividir = function(a, b) {\n  a / b\n};", env);
+  assert.deepEqual(ejecutar("dividir(1, 0)", env).errores, [
+    "Error de ejecución en línea 2, columna 5: división por cero\n" +
+    " 2 |   a / b\n" +
+    "   |     ^",
+  ]);
+});
+
 test("TestEjecutarAgregaContexto", () => {
   const { errores, valor } = ejecutar("let x = 1;\nx + true", new Environment());
   assert.equal(valor, null);

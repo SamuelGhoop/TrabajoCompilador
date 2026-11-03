@@ -27,11 +27,38 @@ export interface Resultado {
 // de sintaxis, lo ejecuta en el entorno dado. Recibir el entorno permite que
 // el REPL conserve las variables de una línea a otra.
 export function ejecutar(codigo: string, env: Environment): Resultado {
-	const resultado = ejecutarSinContexto(codigo, env);
-	return {
-		errores: resultado.errores.map((e) => conContexto(e, codigo)),
-		valor: resultado.valor,
-	};
+	const parser = new Parser(new Lexer(codigo));
+	const program = parser.parseProgram();
+
+	// Los errores léxicos y de sintaxis siempre son de este código.
+	const errores = parser.getErrors();
+	if (errores.length > 0) {
+		return { errores: errores.map((e) => conContexto(e, codigo)), valor: null };
+	}
+
+	let valor: object.Obj;
+	try {
+		valor = evaluar(program, env);
+	} catch (e) {
+		// Una recursión demasiado profunda (por ejemplo, una función que se
+		// llama a sí misma sin caso base) agota la pila de JavaScript. Se
+		// reporta como un error de ejecución del lenguaje, no como un fallo
+		// del intérprete.
+		if (e instanceof RangeError) {
+			return {
+				errores: ["Error de ejecución: desbordamiento de pila (demasiadas llamadas anidadas; ¿falta el caso base de una recursión?)"],
+				valor: null,
+			};
+		}
+		throw e;
+	}
+	// Un error de ejecución puede venir de OTRO código: una función que se
+	// definió en una línea anterior del REPL o en un archivo cargado. Por eso
+	// se muestra la línea del código de donde salió el error (su fuente).
+	if (valor instanceof object.ErrorObj) {
+		return { errores: [conContexto(valor.describir(), valor.fuente ?? codigo)], valor: null };
+	}
+	return { errores: [], valor };
 }
 
 // conContexto agrega a un mensaje de error la línea del código donde
@@ -63,39 +90,6 @@ export function conContexto(mensaje: string, codigo: string): string {
 	const numero = String(linea);
 	const margen = " ".repeat(numero.length);
 	return `${mensaje}\n ${numero} | ${texto}\n ${margen} | ${sangria}^`;
-}
-
-// ejecutarSinContexto hace el trabajo de ejecutar; los mensajes de error
-// todavía no llevan la línea del código.
-function ejecutarSinContexto(codigo: string, env: Environment): Resultado {
-	const parser = new Parser(new Lexer(codigo));
-	const program = parser.parseProgram();
-
-	const errores = parser.getErrors();
-	if (errores.length > 0) {
-		return { errores, valor: null };
-	}
-
-	let valor: object.Obj;
-	try {
-		valor = evaluar(program, env);
-	} catch (e) {
-		// Una recursión demasiado profunda (por ejemplo, una función que se
-		// llama a sí misma sin caso base) agota la pila de JavaScript. Se
-		// reporta como un error de ejecución del lenguaje, no como un fallo
-		// del intérprete.
-		if (e instanceof RangeError) {
-			return {
-				errores: ["Error de ejecución: desbordamiento de pila (demasiadas llamadas anidadas; ¿falta el caso base de una recursión?)"],
-				valor: null,
-			};
-		}
-		throw e;
-	}
-	if (valor instanceof object.ErrorObj) {
-		return { errores: [valor.describir()], valor: null };
-	}
-	return { errores: [], valor };
 }
 
 // ejecutarArchivo lee un archivo de código y lo ejecuta completo. A
