@@ -91,9 +91,47 @@ Abre **http://localhost:4747** en el navegador. Es una terminal de fósforo verd
 - **Editor** a la izquierda: programas de varias líneas, con números de línea; la línea de un error se marca en rojo.
 - **Pestañas** a la derecha con las tres etapas del mismo código: **[SALIDA]** (lo que escribe `print` y el valor final, o los errores con Kyra), **[TOKENS]** (lexer), **[AST]** (parser) y **[TRAZA]** (árbol de llamadas).
 - **[EJEMPLOS ▾]** (o `F2`) abre un menú para elegir entre **[NORMAL]** y **[COLOMBIANO]** (los mismos ejemplos escritos en parce), con vista previa del código. Se maneja con el ratón o con `↑ ↓` (mover), `← →` (normal / colombiano), `Enter` (cargar) y `Esc` (cerrar).
+- **[JUEGO]** abre el huerto de Kyra (ver abajo).
 - **Atajos:** `Ctrl+Enter` ejecuta, `Esc` detiene y `F1` abre la ayuda.
 
 El navegador no ejecuta el lenguaje: le manda el código al servidor, que lo corre con **el mismo intérprete** del REPL en un hilo con pila de 256 MB. Por eso no tiene el límite de recursión del navegador (en la interfaz también funcionan 50 000 llamadas anidadas) y da exactamente los mismos resultados que la terminal. Cada programa tiene un tiempo límite de 60 s, y **[■ DETENER]** lo corta (por ejemplo, un ciclo infinito). El servidor solo escucha en `127.0.0.1`.
+
+## El huerto de Kyra (modo juego)
+
+El botón **[JUEGO]** de la interfaz web abre un juego para aprender el lenguaje: Kyra, la perrita-robot, cuida un huerto hidropónico en un refugio, y usted la programa en el mismo lenguaje del curso.
+
+| Nivel | Tema | Qué hay que hacer |
+| --- | --- | --- |
+| 1 · Primera cosecha | Secuencia y variables | Llegar a la tierra, plantar y cosechar. |
+| 2 · Kyra decide | Condicionales | Un mismo programa debe ganar en 3 tableros distintos. |
+| 3 · La fila larga | Ciclos | Plantar y cosechar una fila de 6 casillas. |
+| 4 · Tres filas | Funciones | Definir `cosecharFila(rumbo)` y usarla tres veces. |
+| 5 · El inventario | Arreglos y hashes | Seguir una ruta guardada en un arreglo y contar en un hash. |
+| 6 · Modo libre | Todo el lenguaje | Sin meta, con una batería de 2000 pasos. |
+
+| Comando | Qué hace |
+| --- | --- |
+| `mover("norte")` | Avanza una casilla: `"norte"`, `"sur"`, `"este"` u `"oeste"`. |
+| `plantar()` | Siembra una lechuga en la tierra. |
+| `cosechar()` | Recoge lo que esté listo y devuelve su nombre (`"lechuga"` o `"tomate"`). |
+| `mirar()` | Devuelve lo que hay bajo Kyra: `"tierra"`, `"brote"`, `"listo"` o `"pasillo"`. |
+| `esperar()` | Deja pasar un ciclo. |
+| `reportar(inventario)` | Entrega un hash como `{"lechuga": 3}`; debe coincidir con lo cosechado. |
+
+**Reglas.** Cada comando cuesta 1 paso y hace crecer los brotes 1 ciclo, y un brote tarda 3 ciclos: `plantar(); esperar(); esperar(); cosechar();`. Chocar, plantar fuera de la tierra o cosechar algo que no está listo detiene el programa con un error de ejecución, igual que una división por cero. Ganar da 1 estrella, y cumplir el par de pasos y el de líneas da una más cada uno. Las líneas vacías y los comentarios no cuentan.
+
+**Controles.** Ejecutar, pausar, avanzar paso a paso, reiniciar, cambiar la velocidad, ver una pista y volver al menú de niveles. Mientras Kyra se mueve, se resalta la línea del comando que está haciendo. Las estrellas y el código de cada nivel se guardan en el navegador (`localStorage`).
+
+**Ciclos infinitos.** Cada nivel tiene un tope de pasos (la batería de Kyra). Un ciclo que no llama comandos no gasta pasos: lo frena un tiempo límite de 10 s, y `Esc` lo cancela antes.
+
+**Cómo funciona.** El programa se ejecuta con el mismo intérprete, en el servidor, y el navegador no conoce las reglas:
+
+```text
+navegador ──código + nivel──▶ servidor ──▶ intérprete + comandos del nivel
+navegador ◀──lista de fotos── servidor ◀── una foto después de cada comando
+```
+
+El navegador solo reproduce esa lista: pausar o avanzar de a un paso es recorrerla a otro ritmo. Los comandos se declaran en el entorno de cada partida y no en la tabla de funciones integradas, así que no existen en el REPL, en los archivos `.ssg` ni en la pestaña normal de la interfaz. Un nivel es un objeto de datos en `src/juego/niveles.ts`, con un mapa de letras, los comandos habilitados, la meta y el par. `npm test` ejecuta la solución de cada nivel y comprueba que gana con las 3 estrellas.
 
 ## El lenguaje
 
@@ -229,6 +267,7 @@ Para agregar un caso, basta con crear `tests/validos/nombre.ssg` (o en `errores/
 | `src/main.ts`, `src/kyra.ts` | Punto de entrada y la bienvenida de Kyra. |
 | `src/hilo.ts` | Crea los hilos con pila de 256 MB donde corre el intérprete. |
 | `src/web/` | Servidor de la interfaz web y el ejecutor de cada programa. |
+| `src/juego/` | El huerto de Kyra: reglas (`juego.ts`), niveles (`niveles.ts`) y comandos del lenguaje (`comandos.ts`). |
 | `web/index.html` | La interfaz web (un solo archivo, sin dependencias). |
 | `examples/`, `tests/` | Programas de ejemplo y casos de prueba. |
 | `docs/DISENO.md` | Documento de diseño: gramática, arquitectura, decisiones y limitaciones. |
