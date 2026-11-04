@@ -46,14 +46,16 @@ export const niveles: Nivel[] = [
 		topePasos: 200,
 		meta: { cosechas: 1 },
 		par: { pasos: 7, lineas: 8 },
-		codigoInicial: `// NIVEL 1: un comando por línea, de arriba hacia abajo.
-// Cada comando gasta un paso, y en cada paso los brotes crecen un ciclo.
+		codigoInicial: `// NIVEL 1: un comando por línea.
+// Cada comando gasta un paso, y en cada
+// paso los brotes crecen un ciclo.
 // Una variable evita repetir un texto:
 
 let rumbo = "este";
 mover(rumbo);
 
-// Siga usted: llegue a la tierra, plantar(), esperar() y cosechar().
+// Siga usted: llegue a la tierra, plante,
+// espere y coseche.
 `,
 		solucion: `let rumbo = "este";
 mover(rumbo);
@@ -80,9 +82,11 @@ cosechar();
 		topePasos: 200,
 		meta: { cosechas: 1 },
 		par: { pasos: 5, lineas: 12 },
-		codigoInicial: `// NIVEL 2: mirar() devuelve lo que hay bajo Kyra, como texto:
-// "tierra", "brote", "listo" o "pasillo".
-// Este programa corre en 3 tableros distintos: decida con if / elif / else.
+		codigoInicial: `// NIVEL 2: mirar() devuelve lo que hay
+// bajo Kyra, como texto: "tierra",
+// "brote", "listo" o "pasillo".
+// Este programa corre en 3 tableros:
+// decida con if / elif / else.
 
 let estado = mirar();
 if (estado == "listo") {
@@ -125,8 +129,9 @@ if (estado == "listo") {
 		topePasos: 200,
 		meta: { cosechas: 6 },
 		par: { pasos: 25, lineas: 13 },
-		codigoInicial: `// NIVEL 3: for repite un número de veces; while repite mientras
-// una condición sea verdadera. Nota: el lenguaje no tiene break.
+		codigoInicial: `// NIVEL 3: for repite un número de veces;
+// while repite mientras una condición sea
+// verdadera. El lenguaje no tiene break.
 
 for (let i = 0; i < 5; i = i + 1) {
     plantar();
@@ -134,7 +139,8 @@ for (let i = 0; i < 5; i = i + 1) {
 }
 plantar();
 
-// Espere la última lechuga con un while y devuélvase cosechando con un for.
+// Espere la última lechuga con un while
+// y devuélvase cosechando con un for.
 `,
 		solucion: `for (let i = 0; i < 5; i = i + 1) {
     plantar();
@@ -171,12 +177,13 @@ for (let j = 0; j < 5; j = j + 1) {
 		topePasos: 200,
 		meta: { cosechas: 15 },
 		par: { pasos: 31, lineas: 14 },
-		codigoInicial: `// NIVEL 4: una función guarda un trabajo para reutilizarlo.
-// El parámetro rumbo permite recorrer la fila hacia cualquier lado.
+		codigoInicial: `// NIVEL 4: una función guarda un trabajo
+// para reutilizarlo. El parámetro rumbo
+// recorre la fila hacia cualquier lado.
 
 let cosecharFila = function(rumbo) {
     cosechar();
-    // Complete: avance y coseche las otras 4 casillas.
+    // Avance y coseche las otras 4.
 };
 
 cosecharFila("este");
@@ -218,16 +225,18 @@ cosecharFila("este");
 		topePasos: 200,
 		meta: { cosechas: 5, reportar: true },
 		par: { pasos: 25, lineas: 14 },
-		codigoInicial: `// NIVEL 5: un arreglo guarda el plan de la ruta y un hash cuenta
-// lo cosechado. cosechar() devuelve "lechuga" o "tomate".
+		codigoInicial: `// NIVEL 5: un arreglo guarda la ruta y un
+// hash cuenta lo cosechado. cosechar()
+// devuelve "lechuga" o "tomate".
 
-let plan = ["este", "este", "sur"]; // complete la ruta
+// Complete la ruta:
+let plan = ["este", "este", "sur"];
 let inventario = {"lechuga": 0, "tomate": 0};
 
 let revisar = function() {
     if (mirar() == "listo") {
-        let cultivo = cosechar();
-        inventario[cultivo] = inventario[cultivo] + 1;
+        let c = cosechar();
+        inventario[c] = inventario[c] + 1;
     }
 };
 
@@ -242,8 +251,8 @@ reportar(inventario);
 let inventario = {"lechuga": 0, "tomate": 0};
 let revisar = function() {
     if (mirar() == "listo") {
-        let cultivo = cosechar();
-        inventario[cultivo] = inventario[cultivo] + 1;
+        let c = cosechar();
+        inventario[c] = inventario[c] + 1;
     }
 };
 revisar();
@@ -276,7 +285,8 @@ reportar(inventario);
 		meta: null,
 		par: null,
 		codigoInicial: `// MODO LIBRE: todos los comandos, sin meta.
-// También funciona print(), y puede escribir en español o en parce.
+// También sirve print(), y puede escribir
+// en español o en parce.
 
 parce rumbo = "este";
 pa (parce i = 0; i < 5; i = i + 1) {
