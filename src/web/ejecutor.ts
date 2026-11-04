@@ -12,6 +12,8 @@
 import { parentPort, workerData } from "node:worker_threads";
 
 import { ejecutar, mostrarValor, type Resultado } from "../interprete";
+import { jugar, type ResultadoJuego } from "../juego/comandos";
+import { nivelPorId } from "../juego/niveles";
 import { Lexer } from "../lexer/lexer";
 import { Environment } from "../object/environment";
 import { Parser } from "../parser/parser";
@@ -19,10 +21,12 @@ import { arbolComoTexto } from "../repl/repl";
 import { trazar } from "../repl/traza";
 import * as token from "../token/token";
 
-// Lo que se pide: el código y si hay que trazar las llamadas.
+// Lo que se pide: el código, si hay que trazar las llamadas y, en modo juego,
+// el nivel que se está jugando.
 export interface Pedido {
 	codigo: string;
 	traza: boolean;
+	nivel?: string | null;
 }
 
 // Lo que se responde a la interfaz.
@@ -35,6 +39,7 @@ export interface Respuesta {
 	errores: string[];         // los errores, ya con el extracto del código
 	etapa: "lexico" | "sintaxis" | "ejecucion" | null; // etapa del primer error
 	traza: string[] | null;    // el árbol de llamadas, si se pidió
+	juego: ResultadoJuego | null; // la partida, si se pidió un nivel
 }
 
 // Límite de lo que se guarda de print: un ciclo infinito con print no debe
@@ -56,22 +61,30 @@ export function atender(pedido: Pedido): Respuesta {
 
 	// --- Ejecución (y traza) ---
 	let salida = "";
-	const env = new Environment(null, (texto) => {
+	const escribir = (texto: string) => {
 		if (salida.length < MAX_SALIDA) {
 			salida += texto;
 			if (salida.length >= MAX_SALIDA) {
 				salida += "\n… (salida recortada)\n";
 			}
 		}
-	});
+	};
 	let resultado: Resultado;
 	let traza: string[] | null = null;
-	if (pedido.traza) {
-		const t = trazar(pedido.codigo, env);
+	let juego: ResultadoJuego | null = null;
+	if (pedido.nivel !== undefined && pedido.nivel !== null) {
+		const nivel = nivelPorId(pedido.nivel);
+		if (nivel === undefined) {
+			resultado = { errores: [`Error de ejecución: nivel desconocido: ${pedido.nivel}`], valor: null };
+		} else {
+			({ resultado, juego } = jugar(pedido.codigo, nivel, escribir));
+		}
+	} else if (pedido.traza) {
+		const t = trazar(pedido.codigo, new Environment(null, escribir));
 		resultado = t.resultado;
 		traza = t.lineas;
 	} else {
-		resultado = ejecutar(pedido.codigo, env);
+		resultado = ejecutar(pedido.codigo, new Environment(null, escribir));
 	}
 
 	return {
@@ -83,6 +96,7 @@ export function atender(pedido: Pedido): Respuesta {
 		errores: resultado.errores,
 		etapa: etapaDe(resultado.errores[0]),
 		traza,
+		juego,
 	};
 }
 
