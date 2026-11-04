@@ -80,6 +80,9 @@ export function evaluar(node: ast.Node | null, env: Environment): object.Obj {
 export interface ObservadorDeLlamadas {
 	entrar(nombre: string, args: object.Obj[]): void;
 	salir(resultado: object.Obj): void;
+	// integrada avisa la línea desde donde se llama una función incluida. La
+	// usa el juego para resaltar la línea de cada comando de Kyra.
+	integrada?(linea: number): void;
 }
 
 let observador: ObservadorDeLlamadas | null = null;
@@ -223,6 +226,9 @@ registrar(ast.CallExpression, (node, env) => {
 		const result = aplicarFuncion(func, args, env);
 		observador.salir(result);
 		return result;
+	}
+	if (observador !== null && func instanceof object.Builtin) {
+		observador.integrada?.(node.token.line);
 	}
 	return aplicarFuncion(func, args, env);
 });
