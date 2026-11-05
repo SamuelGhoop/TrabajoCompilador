@@ -411,6 +411,32 @@ html, body {
 }
 #editor { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) { #lineaViva.pulso { animation: none; } }
+/* La línea del error (al ejecutar) es una barra roja, como la verde de Kyra. */
+#lineaError {
+  position: absolute; left: 0; right: 0; z-index: 0; pointer-events: none;
+  background: rgba(255,64,64,.28);
+  border-left: 6px solid var(--red);
+  box-shadow: 0 0 18px rgba(255,64,64,.5), inset 0 0 0 1px rgba(255,64,64,.6);
+}
+/* Las marcas van encima del editor, recortadas a su caja: el mensaje del
+   error, el subrayado del error mientras se escribe, cuánto valen las
+   variables en la línea de Kyra y en qué vuelta va cada ciclo. Siempre al
+   final de la línea, para no tapar el código. */
+#marcas { position: absolute; z-index: 2; overflow: hidden; pointer-events: none; }
+#marcas > div { position: absolute; white-space: pre; }
+.marca {
+  padding: 0 .6ch;
+  font-size: .82em;
+  text-shadow: none;
+  border: 1px solid rgba(60,255,122,.45);
+  background: rgba(4,12,6,.85);
+  color: var(--phos);
+  overflow: hidden; text-overflow: ellipsis;
+}
+.marca.vuelta { color: var(--amber); border-color: var(--amber); }
+.marca.error  { color: #000; background: var(--red); border-color: var(--red); font-weight: bold; }
+.marca.aviso  { color: var(--red); border: 1px dashed var(--red); }
+.subrayado    { border-bottom: 2px dashed var(--red); }
 #panelJuego { min-width: 0; }
 #jDatos {
   flex: 0 0 auto;
@@ -595,6 +621,8 @@ body.proyector #jEscenaAyuda { color: var(--phos-dim); }
               <div id="editorWrap">
                 <div id="gutter" aria-hidden="true">1</div>
                 <div id="lineaViva" class="hidden" aria-hidden="true"></div>
+                <div id="lineaError" class="hidden" aria-hidden="true"></div>
+                <div id="marcas" aria-hidden="true"></div>
                 <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
                           aria-label="Código del programa"></textarea>
               </div>
@@ -765,7 +793,7 @@ const el = {};
  "posCursor","out","btnRun","btnStop","btnEjemplos","menuEj","menuLista","menuVista","btnClear","btnHelp","btnMute","btnBoot","help",
  "btnHelpClose","fxStatic","fxRed","fxWhite","powerOn","poLine","hud","panelSalida",
  "btnJuego","hudJuego","panelJuego","jTitulo","jDatos","jTablero","jMision","jOut","btnJRun","btnJPausa","btnJPaso",
- "btnJReiniciar","btnJVel","btnJVista","jEscena","lineaViva","btnJCamara","btnJMusica","tituloJuego","tituloEscena","btnJSiguiente","btnJPista","btnJNiveles","btnJSalir","menuNiv","nivLista","nivVista"].forEach(id => el[id] = $(id));
+ "btnJReiniciar","btnJVel","btnJVista","jEscena","lineaViva","lineaError","marcas","btnJCamara","btnJMusica","tituloJuego","tituloEscena","btnJSiguiente","btnJPista","btnJNiveles","btnJSalir","menuNiv","nivLista","nivVista"].forEach(id => el[id] = $(id));
 
 /* ============================================================================
  * 2. AUDIO — Web Audio API, todo generado por osciladores (sin archivos).
@@ -1012,15 +1040,139 @@ function renderGutter() {
 function renderLineaViva() {
   const ver = J.activo && lineaActiva !== null;
   el.lineaViva.classList.toggle("hidden", !ver);
-  if (!ver) return;
+  if (ver) {
+    const estilo = getComputedStyle(el.editor);
+    const alto = parseFloat(estilo.lineHeight);
+    const arriba = parseFloat(estilo.paddingTop) + (lineaActiva - 1) * alto;
+    if (arriba < el.editor.scrollTop) el.editor.scrollTop = arriba - alto;
+    else if (arriba + alto > el.editor.scrollTop + el.editor.clientHeight) el.editor.scrollTop = arriba - el.editor.clientHeight + 2 * alto;
+    el.lineaViva.style.left = el.editor.offsetLeft + "px";
+    el.lineaViva.style.height = alto + "px";
+    el.lineaViva.style.top = (el.editor.offsetTop + arriba - el.editor.scrollTop) + "px";
+  }
+  renderMarcas();
+}
+
+/* --- Marcas sobre el código ---
+   mensajeError: el error de la última ejecución (su línea es lineaConError).
+   aviso: el primer error léxico o de sintaxis que encontró el servidor
+   mientras se escribía (revisarLuego), antes de ejecutar. */
+let mensajeError = null;
+let aviso = null; // { linea, columna, error }
+
+/* "Error de sintaxis en línea 2, columna 15: se esperaba )" → "✗ se esperaba )". */
+function mensajeCorto(msg) {
+  const primera = String(msg || "").split("\n")[0];
+  const sinPosicion = primera.replace(/^Error (léxico|de sintaxis|de ejecución)( en línea \d+, columna \d+)?: /, "");
+  return "✗ " + (sinPosicion.length > 70 ? sinPosicion.slice(0, 69) + "…" : sinPosicion);
+}
+
+/* "i = 2 · n = 3" (las más cercanas primero; si son muchas, las primeras). */
+function textoVariables(vars) {
+  if (!vars || vars.length === 0) return null;
+  const partes = vars.slice(0, 4).map(v => v.nombre + " = " + v.valor);
+  return partes.join(" · ") + (vars.length > 4 ? " · …" : "");
+}
+
+function renderMarcas() {
+  const caja = el.marcas;
+  caja.textContent = "";
   const estilo = getComputedStyle(el.editor);
   const alto = parseFloat(estilo.lineHeight);
-  const arriba = parseFloat(estilo.paddingTop) + (lineaActiva - 1) * alto;
-  if (arriba < el.editor.scrollTop) el.editor.scrollTop = arriba - alto;
-  else if (arriba + alto > el.editor.scrollTop + el.editor.clientHeight) el.editor.scrollTop = arriba - el.editor.clientHeight + 2 * alto;
-  el.lineaViva.style.left = el.editor.offsetLeft + "px";
-  el.lineaViva.style.height = alto + "px";
-  el.lineaViva.style.top = (el.editor.offsetTop + arriba - el.editor.scrollTop) + "px";
+  const izq = parseFloat(estilo.paddingLeft), arriba0 = parseFloat(estilo.paddingTop);
+  caja.style.left = el.editor.offsetLeft + "px";
+  caja.style.top = el.editor.offsetTop + "px";
+  caja.style.width = el.editor.clientWidth + "px";
+  caja.style.height = el.editor.clientHeight + "px";
+
+  // El ancho de un carácter (la letra es monoespaciada, con letter-spacing).
+  const ctx = renderMarcas.ctx || (renderMarcas.ctx = document.createElement("canvas").getContext("2d"));
+  ctx.font = estilo.fontStyle + " " + estilo.fontWeight + " " + estilo.fontSize + " " + estilo.fontFamily;
+  const ancho = ctx.measureText("0000000000").width / 10 + (parseFloat(estilo.letterSpacing) || 0);
+  const lineas = el.editor.value.split("\n");
+  const columnas = t => t.replace(/\t/g, "    ").length;
+  const yDe = n => arriba0 + (n - 1) * alto - el.editor.scrollTop;
+  const xDe = col => izq + col * ancho - el.editor.scrollLeft;
+
+  const poner = (clase, n, x, texto, estiloExtra) => {
+    const d = document.createElement("div");
+    d.className = clase;
+    if (texto !== null) d.textContent = texto;
+    d.style.top = yDe(n) + "px";
+    d.style.height = alto + "px";
+    d.style.lineHeight = (alto - 2) + "px";
+    d.style.left = x + "px";
+    if (estiloExtra) Object.assign(d.style, estiloExtra);
+    caja.append(d);
+    return d;
+  };
+  // Una etiqueta va dos espacios después del final de su línea. Si no cabe,
+  // se recorta con "…"; solo si casi no queda espacio se corre a la
+  // izquierda (y tapa el final de la línea).
+  const etiqueta = (clase, n, texto) => {
+    if (n < 1 || n > lineas.length) return;
+    const x = xDe(columnas(lineas[n - 1].trimEnd()) + 2);
+    const libre = el.editor.clientWidth - 4 - x;
+    const d = poner("marca " + clase, n, x, texto, { maxWidth: Math.max(libre, 16 * ancho) + "px" });
+    const sobra = d.offsetLeft + d.offsetWidth - (el.editor.clientWidth - 4);
+    if (sobra > 0) d.style.left = Math.max(0, d.offsetLeft - sobra) + "px";
+  };
+
+  // 1. La barra roja y el mensaje del error de la última ejecución.
+  const hayError = lineaConError !== null && lineaConError <= lineas.length;
+  el.lineaError.classList.toggle("hidden", !hayError);
+  if (hayError) {
+    el.lineaError.style.left = el.editor.offsetLeft + "px";
+    el.lineaError.style.height = alto + "px";
+    el.lineaError.style.top = (el.editor.offsetTop + yDe(lineaConError)) + "px";
+    etiqueta("error", lineaConError, mensajeCorto(mensajeError));
+  }
+
+  // 2. El error encontrado mientras se escribe: subrayado desde su columna.
+  if (aviso && aviso.linea !== null && aviso.linea <= lineas.length && aviso.linea !== lineaConError) {
+    const texto = lineas[aviso.linea - 1];
+    const desde = columnas(texto.slice(0, Math.max(0, aviso.columna - 1)));
+    const hasta = Math.max(desde + 1, columnas(texto.trimEnd()));
+    poner("subrayado", aviso.linea, xDe(desde), null, { width: ((hasta - desde) * ancho) + "px" });
+    etiqueta("aviso", aviso.linea, mensajeCorto(aviso.error));
+  }
+
+  // 3. En el juego: en qué vuelta va cada ciclo y cuánto valen las variables
+  //    en la línea que está ejecutando Kyra.
+  const foto = J.activo && lineaActiva !== null ? J.foto : null;
+  if (foto) {
+    const vueltas = new Map();
+    (foto.ciclos || []).forEach(c => vueltas.set(c.linea, c.vuelta)); // en recursión, gana el de adentro
+    vueltas.forEach((v, n) => { if (n !== lineaActiva) etiqueta("vuelta", n, "↻ VUELTA " + v); });
+    const vars = textoVariables(foto.variables);
+    const enEsta = vueltas.has(lineaActiva) ? "↻ VUELTA " + vueltas.get(lineaActiva) : null;
+    const texto = [enEsta, vars].filter(Boolean).join(" · ");
+    if (texto) etiqueta("vars", lineaActiva, texto);
+  }
+}
+
+/* Revisión mientras se escribe: un rato después de la última tecla se le
+   pide al servidor que analice el código (sin ejecutarlo). Si el código
+   cambió mientras tanto, la respuesta vieja se ignora. */
+let relojRevision = null;
+function revisarLuego() {
+  aviso = null;
+  clearTimeout(relojRevision);
+  relojRevision = setTimeout(async () => {
+    const codigo = el.editor.value;
+    try {
+      const r = await fetch("/api/revisar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo }),
+      });
+      if (!r.ok) return; // un servidor viejo no tiene /api/revisar: no se marca nada
+      const revision = await r.json();
+      if (el.editor.value !== codigo) return;
+      aviso = revision.error ? revision : null;
+      renderMarcas();
+    } catch (e) { /* sin servidor no hay revisión */ }
+  }, 450);
 }
 
 function destellarLinea() {
@@ -1037,6 +1189,7 @@ function renderPos() {
 let ultimoKey = 0;
 el.editor.addEventListener("input", () => {
   lineaConError = null;
+  revisarLuego();
   renderGutter(); renderPos();
   if (J.activo) alEditarEnJuego(); else lsSet("kyra_codigo", el.editor.value);
   const ahora = performance.now();
@@ -1049,6 +1202,32 @@ el.editor.addEventListener("keydown", e => {
     e.preventDefault();
     el.editor.setRangeText("    ", el.editor.selectionStart, el.editor.selectionEnd, "end");
     el.editor.dispatchEvent(new Event("input"));
+    return;
+  }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const v = el.editor.value, ini = el.editor.selectionStart, fin = el.editor.selectionEnd;
+  const antes = v.slice(v.lastIndexOf("\n", ini - 1) + 1, ini); // la línea hasta el cursor
+  if (e.key === "Enter" && !e.shiftKey) {
+    // Enter conserva la sangría y agrega un nivel después de { ( [. Si justo
+    // después del cursor viene el cierre, este baja a su propia línea:
+    //   if (x) {|}   →   if (x) {
+    //                        |
+    //                    }
+    e.preventDefault();
+    const sangria = antes.match(/^[ \t]*/)[0];
+    const abre = /[{(\[]\s*$/.test(antes);
+    const nueva = "\n" + sangria + (abre ? "    " : "");
+    if (abre && /^[ \t]*[})\]]/.test(v.slice(fin))) {
+      el.editor.setRangeText(nueva + "\n" + sangria, ini, fin, "start");
+      el.editor.selectionStart = el.editor.selectionEnd = ini + nueva.length;
+    } else {
+      el.editor.setRangeText(nueva, ini, fin, "end");
+    }
+    el.editor.dispatchEvent(new Event("input"));
+  } else if (e.key === "}" && ini === fin && /^ +$/.test(antes)) {
+    // Una } al comienzo de una línea sangrada le quita un nivel (la tecla
+    // se escribe después, como siempre).
+    el.editor.setRangeText("", ini - Math.min(4, antes.length), ini, "end");
   }
 });
 
@@ -1100,6 +1279,7 @@ async function ejecutar(conTraza) {
     pedidoTraza = conTraza;
     const ms = Math.round(performance.now() - t0);
     lineaConError = lineaDelError(ultima.errores[0]);
+    mensajeError = ultima.errores[0] || null;
     renderGutter();
     if (ultima.errores.length > 0) {
       setStatus(ultima.errores.length + " ERROR(ES) · ETAPA: " + nombreEtapa(ultima.etapa) + " · " + ms + " MS", "err");
@@ -1310,6 +1490,7 @@ function elegirEjemplo(i) {
   el.editor.value = ej.codigo;
   el.editor.scrollTop = 0;
   lineaConError = null;
+  revisarLuego();
   renderGutter(); renderPos(); lsSet("kyra_codigo", el.editor.value);
   for (let k = 0; k < 5; k++) SFX.blip(1500, 0.018, "square", 0.07, null, k * 0.04);
   setStatus("EJEMPLO " + (menu.modo === "colombiano" ? "EN PARCE " : "") + "CARGADO: " + nombreDeEjemplo(ej.nombre) + ". PULSE [▶ EJECUTAR]");
@@ -1649,6 +1830,7 @@ function salirDelJuego() {
   lineaConError = null; lineaActiva = null;
   el.led.classList.remove("busy");
   el.editor.value = lsGet("kyra_codigo", PROGRAMA_INICIAL) || PROGRAMA_INICIAL;
+  revisarLuego();
   renderGutter(); renderPos();
   setStatus("LISTO. ESCRIBA UN PROGRAMA Y PULSE [EJECUTAR]");
   SFX.deny();
@@ -1670,6 +1852,7 @@ function cargarNivel(i) {
   comandos.textContent = nivel.comandos.map(c => c + "()").join(" ");
   el.jMision.append(nivel.tema + ". " + nivel.mision + " ", comandos);
   renderPos();
+  revisarLuego();
   reiniciarNivel();
 }
 
@@ -1962,6 +2145,7 @@ function terminarPartida() {
   J.terminado = true;
   lineaActiva = null;
   lineaConError = lineaDelError(r.errores[0]);
+  mensajeError = r.errores[0] || null;
   renderGutter();
 
   const lineas = [];
@@ -2061,6 +2245,7 @@ function arrancarTerminal() {
 
 (async function main() {
   el.editor.value = lsGet("kyra_codigo", PROGRAMA_INICIAL) || PROGRAMA_INICIAL;
+  revisarLuego();
   cargarEjemplos();
   renderMute();
   await runBoot(false);
