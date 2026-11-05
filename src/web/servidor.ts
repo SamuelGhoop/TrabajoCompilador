@@ -13,12 +13,13 @@
 //   - el navegador cancela el pedido (botón [DETENER]).
 //
 // Solo escucha en 127.0.0.1: no se puede usar desde otra computadora.
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 
 import { crearHilo } from "../hilo";
 import { nivelesParaInterfaz } from "../juego/niveles";
 import type { Pedido, Respuesta } from "./ejecutor";
+import { rutaEstatica } from "./estaticos";
 
 const PUERTO = Number(process.env.PORT ?? 4747);
 const TIEMPO_LIMITE_MS = 60_000;          // fibonacci(34) tarda ~33 s
@@ -129,6 +130,16 @@ const servidor = createServer(async (req, res) => {
 			const respuesta = await ejecutarEnHilo(pedido, cancelacion.signal);
 			if (!res.destroyed) {
 				responder(res, 200, "application/json", JSON.stringify(respuesta));
+			}
+		} else if (req.method === "GET" && rutaEstatica(req.url ?? "") !== null) {
+			// Los archivos del modo 3D: el visor, los modelos y three.js.
+			const { ruta, tipo } = rutaEstatica(req.url ?? "")!;
+			const archivo = new URL(ruta, raiz);
+			if (existsSync(archivo)) {
+				res.writeHead(200, { "Content-Type": tipo, "Cache-Control": "no-store" });
+				res.end(readFileSync(archivo));
+			} else {
+				responder(res, 404, "text/plain", "No encontrado");
 			}
 		} else {
 			responder(res, 404, "text/plain", "No encontrado");
