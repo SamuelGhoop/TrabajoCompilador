@@ -97,9 +97,10 @@ código ──▶ Lexer ──tokens──▶ Parser ──AST──▶ Evaluado
 
 ## 5. Uso de inteligencia artificial
 
-Usamos **Claude Code** (asistente de programación de Anthropic) para: traducir de Go a TypeScript el lexer, el AST, el parser y el REPL del proyecto base; escribir el evaluador y las funciones integradas; agregar los operadores lógicos, la posición de los errores y la ejecución de archivos; escribir los ejemplos, las pruebas y la documentación; y encontrar y corregir el problema de rendimiento y el de la pila.
+Usamos **Claude Code** (asistente de programación de Anthropic) para: traducir de Go a TypeScript el lexer, el AST, el parser y el REPL del proyecto base; escribir el evaluador y las funciones integradas; agregar los operadores lógicos, la posición de los errores y la ejecución de archivos; escribir los ejemplos, las pruebas y la documentación; encontrar y corregir el problema de rendimiento y el de la pila; y construir la interfaz web y el huerto de Kyra (los niveles, la vista 3D con los modelos de Blender, el resaltado de la línea que se ejecuta con las variables y las vueltas de los ciclos, y la revisión del código mientras se escribe).
 
 Cómo verificamos que el código fuera correcto:
-- **Pruebas automáticas** (`npm test`, 159 casos): pruebas unitarias de cada etapa, más 32 programas en `tests/` con su salida esperada. Cada salida esperada se revisó a mano antes de guardarla.
+- **Pruebas automáticas** (`npm test`, 174 casos): pruebas unitarias de cada etapa, más 32 programas en `tests/` con su salida esperada. Cada salida esperada se revisó a mano antes de guardarla.
 - **Comparación con el proyecto del profesor:** el programa `examples/programa.ssg` (Ackermann, Fibonacci y Hanói) da el mismo resultado que indica su README, y los mensajes de error y las reglas del lenguaje se tomaron de su código.
-- **Revisión del código:** _(COMPLETAR antes de entregar: cómo revisó cada integrante el código, por ejemplo qué módulos leyó y qué probó en el REPL.)_
+- **Revisión de cada cambio:** ningún cambio se guardó sin pasar `npm test` y la revisión de tipos (`npm run check`). Cuando la IA propuso un comportamiento distinto al del evaluador del profesor, se ajustó para dar sus mismos resultados (ver §3). Las respuestas de `docs/GUIA_ESTUDIO.md` se comprobaron ejecutando el intérprete.
+- **Prueba en la aplicación real:** los cambios de la interfaz y del juego se probaron abriendo la página con el servidor real (`npm run ui`), en modo normal y en modo proyector, y jugando los niveles. Así se encontró, por ejemplo, que la barra de la línea que se ejecuta funcionaba pero casi no se veía en un proyector, y se corrigió.
