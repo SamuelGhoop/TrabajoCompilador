@@ -399,14 +399,18 @@ html, body {
   text-transform: uppercase;
   color: var(--phos-bright);
 }
+/* El tablero ocupa todo el espacio libre del panel; ajustarCeldas() calcula
+   el tamaño de cada casilla para que el mapa quepa entero. */
 #jTablero {
   --celda: 2em;
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-height: 6em;
   display: grid;
   grid-auto-rows: var(--celda);
   gap: 1px;
   justify-content: center;
-  padding: .2em 0 .4em;
+  align-content: center;
+  padding: .4em .5em;
 }
 /* El tamaño lo da la cuadrícula: dentro de .celda, "em" valdría otra cosa. */
 .celda {
@@ -434,7 +438,14 @@ html, body {
   text-shadow: none;
 }
 #jMision b { font-weight: normal; color: var(--phos); }
-#jOut { border-top: 1px solid rgba(60,255,122,.18); font-size: .82em; }
+#jOut { flex: 0 1 8em; min-height: 4.5em; border-top: 1px solid rgba(60,255,122,.18); font-size: .82em; }
+
+/* En el juego el monitor deja el 4:3 y llena la ventana, y el huerto se
+   queda con la mayor parte; el editor conserva el ancho del código inicial. */
+@media (min-width: 761px) {
+  body.modo-juego #bezel { aspect-ratio: auto; width: 100%; height: 100%; }
+  body.modo-juego #panels { grid-template-columns: minmax(min(100%, 48ch), 2fr) minmax(0, 3fr); }
+}
 #jOut, #jOut > div { white-space: pre-wrap; overflow-wrap: anywhere; }
 #jOut > div { min-height: 0; }
 
@@ -1352,6 +1363,7 @@ function elegirNivel(i) {
 /* --- Entrar y salir: el juego usa el mismo editor de la terminal --- */
 function mostrarModoJuego(activo) {
   J.activo = activo;
+  document.body.classList.toggle("modo-juego", activo);
   el.panelJuego.classList.toggle("hidden", !activo);
   el.hudJuego.classList.toggle("hidden", !activo);
   el.panelSalida.classList.toggle("hidden", activo);
@@ -1385,9 +1397,23 @@ function cargarNivel(i) {
 }
 
 /* --- Dibujo --- */
+/* La casilla más grande con la que el mapa cabe en el espacio del tablero. */
+function ajustarCeldas() {
+  const filas = Number(el.jTablero.dataset.filas), columnas = Number(el.jTablero.dataset.columnas);
+  if (!filas || !columnas) return;
+  const estilo = getComputedStyle(el.jTablero);
+  const ancho = el.jTablero.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
+  const alto = el.jTablero.clientHeight - parseFloat(estilo.paddingTop) - parseFloat(estilo.paddingBottom);
+  const celda = Math.floor(Math.min((ancho - (columnas - 1)) / columnas, (alto - (filas - 1)) / filas, 160));
+  if (celda > 0) el.jTablero.style.setProperty("--celda", celda + "px");
+}
+new ResizeObserver(ajustarCeldas).observe(el.jTablero);
+
 function dibujarTablero(foto) {
   const filas = foto.tablero.length, columnas = foto.tablero[0].length;
-  el.jTablero.style.setProperty("--celda", Math.min(3, 15 / filas) + "em");
+  el.jTablero.dataset.filas = filas;
+  el.jTablero.dataset.columnas = columnas;
+  ajustarCeldas();
   el.jTablero.style.gridTemplateColumns = "repeat(" + columnas + ", var(--celda))";
   el.jTablero.textContent = "";
   foto.tablero.forEach((fila, f) => {
