@@ -7,6 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<!-- Modo 3D del juego: three.js lo sirve el mismo servidor (node_modules), así funciona sin internet. -->
+<script type="importmap">
+{ "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }
+</script>
+<script type="module" src="/3d/huerto3d.js"></script>
 <style>
 /* ============================================================================
    KYRACOMPILER (TM) TERMLINK — interfaz web del intérprete
@@ -428,6 +433,14 @@ html, body {
 .celda.listo   { background: #23501F; }
 .celda.tanque  { background: #123A4A; color: #3FA7C9; }
 .celda.kyra    { outline: 2px solid var(--phos-bright); outline-offset: -2px; }
+/* La escena 3D ocupa el mismo lugar que el tablero 2D. */
+#jEscena { position: relative; flex: 1 1 0; min-height: 8em; overflow: hidden; }
+#jEscena canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#jEscenaAyuda {
+  position: absolute; right: .5em; bottom: .3em;
+  font-size: .7em; letter-spacing: .08em; color: var(--phos-dim); text-shadow: none;
+  pointer-events: none;
+}
 #jMision {
   flex: 0 0 auto;
   padding: .2em .5em;
@@ -535,6 +548,9 @@ html, body {
               <div class="ptitle"><span id="jTitulo"></span></div>
               <div id="jDatos"></div>
               <div id="jTablero" role="img" aria-label="Tablero del huerto"></div>
+              <div id="jEscena" class="hidden" role="img" aria-label="Huerto en 3D">
+                <div id="jEscenaAyuda">ARRASTRE: GIRAR · RUEDA: ZOOM · DOBLE CLIC: CENTRAR</div>
+              </div>
               <div id="jMision"></div>
               <pre class="out" id="jOut" aria-live="polite"></pre>
             </section>
@@ -559,6 +575,7 @@ html, body {
             <button class="btn" id="btnJPaso" title="Avanzar un comando">[▶❚ PASO]</button>
             <button class="btn" id="btnJReiniciar" title="Volver al inicio del tablero (Esc)">[↺ REINICIAR]</button>
             <button class="btn" id="btnJVel" title="Cambiar la velocidad"></button>
+            <button class="btn hidden" id="btnJVista" title="Cambiar entre el huerto 3D y el tablero 2D"></button>
             <button class="btn hidden" id="btnJSiguiente" title="Ir al siguiente nivel">[SIGUIENTE ▸]</button>
             <span id="hudJuegoDer">
               <button class="btn" id="btnJPista" title="Ver una pista">[PISTA]</button>
@@ -667,7 +684,7 @@ const el = {};
  "posCursor","out","btnRun","btnStop","btnEjemplos","menuEj","menuLista","menuVista","btnClear","btnHelp","btnMute","btnBoot","help",
  "btnHelpClose","fxStatic","fxRed","fxWhite","powerOn","poLine","hud","panelSalida",
  "btnJuego","hudJuego","panelJuego","jTitulo","jDatos","jTablero","jMision","jOut","btnJRun","btnJPausa","btnJPaso",
- "btnJReiniciar","btnJVel","btnJSiguiente","btnJPista","btnJNiveles","btnJSalir","menuNiv","nivLista","nivVista"].forEach(id => el[id] = $(id));
+ "btnJReiniciar","btnJVel","btnJVista","jEscena","btnJSiguiente","btnJPista","btnJNiveles","btnJSalir","menuNiv","nivLista","nivVista"].forEach(id => el[id] = $(id));
 
 /* ============================================================================
  * 2. AUDIO — Web Audio API, todo generado por osciladores (sin archivos).
@@ -1292,6 +1309,8 @@ const J = {
   terminado: false,
   velocidad: VELOCIDADES[lsGet("kyra_juego_vel", 1)] ? lsGet("kyra_juego_vel", 1) : 1,
   progreso: objetoGuardado("kyra_juego_progreso"), // estrellas por nivel
+  vista3d: lsGet("kyra_juego_3d", true) !== false,  // huerto 3D o tablero 2D
+  foto: null,         // la foto que se está mostrando
 };
 
 const nivelActual = () => J.niveles[J.indice];
@@ -1368,6 +1387,7 @@ function mostrarModoJuego(activo) {
   el.hudJuego.classList.toggle("hidden", !activo);
   el.panelSalida.classList.toggle("hidden", activo);
   el.hud.classList.toggle("hidden", activo);
+  if (activo) aplicarVista();
 }
 
 function salirDelJuego() {
@@ -1439,13 +1459,46 @@ function dibujarDatos(foto) {
   el.jDatos.textContent = partes.join(" · ");
 }
 
-function dibujarFoto(foto) {
+function dibujarFoto(foto, anterior) {
+  J.foto = foto;
+  if (usar3D() && vista3D.montada) window.Huerto3D.dibujar(foto, anterior || null, VELOCIDADES[J.velocidad].ms);
   dibujarTablero(foto);
   dibujarDatos(foto);
   lineaActiva = foto.linea;
   renderGutter();
   if (foto.comando) setStatus("L" + foto.linea + " · " + foto.comando, "busy");
 }
+
+/* --- Vista 3D: la dibuja web/3d/huerto3d.js con las mismas fotos. Si no
+       carga (sin WebGL, por ejemplo), el juego sigue con el tablero 2D. --- */
+const vista3D = { lista: !!window.Huerto3D, montada: false };
+const usar3D = () => vista3D.lista && J.vista3d;
+
+function aplicarVista() {
+  const en3D = usar3D();
+  el.jTablero.classList.toggle("hidden", en3D);
+  el.jEscena.classList.toggle("hidden", !en3D);
+  el.btnJVista.classList.toggle("hidden", !vista3D.lista);
+  el.btnJVista.textContent = "[VISTA: " + (J.vista3d ? "3D" : "2D") + "]";
+  if (!en3D || !J.activo) return;
+  if (!vista3D.montada) {
+    vista3D.montada = true;
+    window.Huerto3D.montar(el.jEscena)
+      .then(() => { if (J.foto) window.Huerto3D.dibujar(J.foto, null, 0); })
+      .catch(e => { console.warn("[huerto3d]", e); vista3D.lista = false; aplicarVista(); });
+  } else if (J.foto) {
+    window.Huerto3D.dibujar(J.foto, null, 0);
+  }
+}
+
+function cambiarVista() {
+  J.vista3d = !J.vista3d;
+  lsSet("kyra_juego_3d", J.vista3d);
+  SFX.block();
+  aplicarVista();
+}
+
+window.addEventListener("huerto3d-listo", () => { vista3D.lista = true; aplicarVista(); });
 
 function escribirJuego(lineas) {
   el.jOut.textContent = "";
@@ -1539,7 +1592,7 @@ function avanzar() {
   if (J.i >= J.eventos.length - 1) return;
   J.i += 1;
   const foto = J.eventos[J.i];
-  dibujarFoto(foto);
+  dibujarFoto(foto, J.eventos[J.i - 1]);
   if (VELOCIDADES[J.velocidad].ms >= 100) {
     if (foto.comando && foto.comando.startsWith("cosechar")) SFX.bark(); else SFX.key();
   }
@@ -1597,6 +1650,7 @@ function terminarPartida() {
     SFX.deny();
   }
   escribirJuego(lineas);
+  if (usar3D() && vista3D.montada) window.Huerto3D.final(r.errores.length > 0 ? "error" : juego.gano ? "gano" : "falta");
   if (J.eventos.length > 0) dibujarDatos(J.eventos[J.i]);
   renderControles();
 }
@@ -1634,6 +1688,7 @@ el.btnJSiguiente.addEventListener("click", () => { cargarNivel(J.indice + 1); SF
 el.btnJPista.addEventListener("click", mostrarPista);
 el.btnJNiveles.addEventListener("click", abrirMenuNiveles);
 el.btnJSalir.addEventListener("click", salirDelJuego);
+el.btnJVista.addEventListener("click", cambiarVista);
 
 /* ============================================================================
  * 10. ARRANQUE
