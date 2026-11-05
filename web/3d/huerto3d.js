@@ -246,7 +246,7 @@ function montar(elemento) {
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.PCFShadowMap;
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
-	renderer.toneMappingExposure = 1.5;
+	renderer.toneMappingExposure = modoProyector ? 2.1 : 1.5;
 	contenedor.append(renderer.domElement);
 
 	escena = new THREE.Scene();
@@ -737,12 +737,21 @@ function ambiente(indice) {
 	const { cielo, sol } = escena.userData;
 	cielo.color.setHex(a.cielo);
 	cielo.groundColor.setHex(a.suelo);
-	cielo.intensity = a.fuerza;
+	const extra = modoProyector ? 1.4 : 1;
+	cielo.intensity = a.fuerza * extra;
 	sol.color.setHex(a.sol);
-	sol.intensity = a.luz;
+	sol.intensity = a.luz * extra;
 	sol.position.set(...a.pos);
 	escena.background.setHex(a.fondo);
 	escena.fog.color.setHex(a.fondo);
+}
+
+// proyector: más luz y exposición, porque un proyector oscurece la escena.
+let modoProyector = false;
+function proyector(activo) {
+	modoProyector = activo;
+	if (renderer) renderer.toneMappingExposure = activo ? 2.1 : 1.5;
+	if (ambienteActual) ambiente(AMBIENTES.indexOf(ambienteActual));
 }
 
 function sacudir(segundos = 0.35) {
@@ -1138,5 +1147,5 @@ async function titulo(elemento) {
 
 // depurar sirve para revisar la escena desde la consola del navegador.
 const depurar = () => ({ THREE, escena, camara, controles, kyra, tablero, cuadro });
-window.Huerto3D = { montar, dibujar, final, reencuadrar, ambiente, presentar, cambiarSeguir, titulo, depurar };
+window.Huerto3D = { montar, dibujar, final, reencuadrar, ambiente, presentar, cambiarSeguir, titulo, proyector, depurar };
 window.dispatchEvent(new Event("huerto3d-listo"));

@@ -129,6 +129,7 @@ El botón **[JUEGO]** de la interfaz web abre un juego para aprender el lenguaje
 - **Cada error, una reacción:** con un error léxico Kyra ladea la cabeza con un "?"; con uno de sintaxis se congela con las luces en rojo; con uno de ejecución se pone triste (y si chocó, saltan chispas).
 - **Kyra habla:** lo que escribe `print` (o `diga` en parce) sale en un globo sobre Kyra, en el momento en que se ejecuta.
 - **Cámara:** al entrar a un nivel da una vuelta alrededor del huerto; **[CÁMARA: SIGUE]** la pone detrás de Kyra.
+- **Modo proyector:** `F8` o **[PROYECTOR]** quita las líneas y el brillo del CRT, aclara el texto tenue, agranda el editor y la salida e ilumina más la escena 3D, para que se lea bien en un proyector.
 - **Música:** un bucle chiptune hecho con osciladores, que se apaga con **[MÚSICA]** o con el botón de sonido.
 
 **Controles.** Ejecutar, pausar, avanzar paso a paso, reiniciar, cambiar la velocidad, cambiar la vista, ver una pista y volver al menú de niveles. Mientras Kyra se mueve, se resalta la línea del comando que está haciendo. El código de cada nivel se guarda en el navegador (`localStorage`); las estrellas vuelven a cero cada vez que se abre la página, para poder mostrar el juego desde el principio.

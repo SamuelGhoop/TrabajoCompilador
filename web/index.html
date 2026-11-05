@@ -538,6 +538,25 @@ body.modo-juego #gutter:hover { color: var(--phos); }
   #help .cols { grid-template-columns: 1fr; }
 }
 
+/* ---------------------------------------------------------- MODO PROYECTOR */
+/* Un proyector lava el verde oscuro y las líneas del CRT vuelven borroso el
+   texto chico: este modo quita los efectos, aclara el texto tenue y agranda
+   el editor y la salida. Se activa con F8 o [PROYECTOR]. */
+body.proyector {
+  --phos:        #6BFF9A;
+  --phos-dim:    #5FC284;
+  --phos-bright: #E4FFEE;
+  --glow: 0 0 1px currentColor;
+}
+body.proyector #fxScan, body.proyector #fxRoll, body.proyector #fxVig, body.proyector #fxStatic { display: none; }
+body.proyector #screen { transform: none; box-shadow: none; }
+body.proyector #screen.flicker { filter: none; }
+body.proyector #content { text-shadow: none; }
+body.proyector #editor, body.proyector #gutter { font-size: 1.05em; }
+body.proyector .out { font-size: 1em; }
+body.proyector #jOut, body.proyector #jMision { font-size: .95em; }
+body.proyector #jEscenaAyuda { color: var(--phos-dim); }
+
 @media (prefers-reduced-motion: reduce) {
   #fxRoll { display: none; }
   #screen.flicker { filter: none; }
@@ -615,6 +634,7 @@ body.modo-juego #gutter:hover { color: var(--phos); }
               <button class="btn" id="btnClear" title="Limpiar el editor">[LIMPIAR]</button>
               <button class="btn" id="btnHelp" title="Ayuda (F1)">[?]</button>
               <button class="btn" id="btnMute" title="Sonido">[SND ON]</button>
+              <button class="btn btnProyector" title="Modo proyector: sin efectos CRT y con letra más grande (F8)">[PROYECTOR]</button>
               <button class="btn" id="btnBoot" title="Volver a encender">[REBOOT]</button>
             </span>
           </div>
@@ -630,6 +650,7 @@ body.modo-juego #gutter:hover { color: var(--phos); }
             <button class="btn hidden" id="btnJSiguiente" title="Ir al siguiente nivel">[SIGUIENTE ▸]</button>
             <span id="hudJuegoDer">
               <button class="btn" id="btnJMusica" title="Música de fondo"></button>
+              <button class="btn btnProyector" title="Modo proyector: sin efectos CRT y con letra más grande (F8)">[PROYECTOR]</button>
               <button class="btn" id="btnJPista" title="Ver una pista">[PISTA]</button>
               <button class="btn" id="btnJNiveles" title="Menú de niveles (F2)">[NIVELES]</button>
               <button class="btn" id="btnJSalir" title="Volver a la terminal">[SALIR]</button>
@@ -1320,6 +1341,7 @@ document.querySelectorAll(".tab[data-tab]").forEach(b => b.addEventListener("cli
 
 window.addEventListener("keydown", e => {
   if (el.term.classList.contains("hidden")) return;
+  if (e.key === "F8") { e.preventDefault(); cambiarProyector(); return; }
   if (tituloAbierto()) {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cerrarTitulo(true); }
     else if (e.key === "Escape") { e.preventDefault(); cerrarTitulo(false); }
@@ -1547,6 +1569,25 @@ const Musica = {
   },
 };
 
+/* --- Modo proyector --- */
+let proyector = lsGet("kyra_proyector", false) === true;
+
+function aplicarProyector() {
+  document.body.classList.toggle("proyector", proyector);
+  document.querySelectorAll(".btnProyector").forEach(b => {
+    b.textContent = "[PROYECTOR: " + (proyector ? "ON" : "OFF") + "]";
+  });
+  if (window.Huerto3D) window.Huerto3D.proyector(proyector);
+  if (J.activo) renderLineaViva(); // la letra cambió de tamaño
+}
+
+function cambiarProyector() {
+  proyector = !proyector;
+  lsSet("kyra_proyector", proyector);
+  SFX.block();
+  aplicarProyector();
+}
+
 function renderMusica() {
   el.btnJMusica.textContent = "[MÚSICA: " + (Musica.activa ? "ON" : "OFF") + "]";
 }
@@ -1720,7 +1761,11 @@ function cambiarVista() {
   aplicarVista();
 }
 
-window.addEventListener("huerto3d-listo", () => { vista3D.lista = true; aplicarVista(); });
+window.addEventListener("huerto3d-listo", () => {
+  vista3D.lista = true;
+  window.Huerto3D.proyector(lsGet("kyra_proyector", false) === true);
+  aplicarVista();
+});
 
 /* Un clic en el número de una línea muestra cómo la leyó el intérprete: sus
    tokens (lexer) y el árbol de la sentencia que la contiene (parser). */
@@ -1995,6 +2040,8 @@ el.btnJVista.addEventListener("click", cambiarVista);
 el.btnJCamara.addEventListener("click", cambiarCamara);
 el.btnJMusica.addEventListener("click", () => Musica.alternar());
 renderMusica();
+document.querySelectorAll(".btnProyector").forEach(b => b.addEventListener("click", cambiarProyector));
+aplicarProyector();
 
 /* ============================================================================
  * 10. ARRANQUE
