@@ -32,6 +32,27 @@ const error = (mensaje: string): juego.Accion => ({ ok: false, error: mensaje })
 // dice en el momento justo. Un ciclo que imprime mucho no llena la lista.
 const MAX_DICHOS = 100;
 
+// Un valor largo (un arreglo grande, un texto) se recorta en la foto: el
+// navegador lo muestra al lado de una línea de código.
+const MAX_VALOR = 24;
+
+// variablesDe lista las variables del programa que se ven desde un entorno,
+// sin las funciones ni los comandos de Kyra.
+function variablesDe(env: Environment | null): juego.Variable[] {
+	if (env === null) {
+		return [];
+	}
+	const variables: juego.Variable[] = [];
+	for (const [nombre, valor] of env.visibles()) {
+		if (valor instanceof object.Builtin || valor instanceof object.FunctionObj) {
+			continue;
+		}
+		const texto = valor.inspect();
+		variables.push({ nombre, valor: texto.length > MAX_VALOR ? texto.slice(0, MAX_VALOR - 1) + "…" : texto });
+	}
+	return variables;
+}
+
 // sinArgumentos adapta un comando que no recibe argumentos.
 function sinArgumentos(accion: (estado: juego.Estado) => juego.Accion) {
 	return (estado: juego.Estado, args: object.Obj[]): juego.Accion =>
@@ -137,21 +158,37 @@ export function jugar(codigo: string, nivel: Nivel, escribir: Salida): { resulta
 		const estado = juego.crearEstado(tablero, nivel.topePasos);
 		eventos.push(juego.foto(estado, variante, null, null));
 
+		// Lo que se sabe del programa en el momento de cada comando: su línea,
+		// el entorno desde donde se llamó y los ciclos que estaban corriendo.
 		let linea: number | null = null;
+		let entornoDeLlamada: Environment | null = null;
+		const ciclos: juego.Vuelta[] = [];
+		const contexto = () => ({
+			variables: variablesDe(entornoDeLlamada),
+			ciclos: ciclos.map((c) => ({ ...c })),
+		});
+
 		const env = new Environment(null, (texto) => {
 			escribir(texto);
 			if (dichos < MAX_DICHOS) {
 				dichos += 1;
 				const dice = texto.replace(/\n$/, "");
-				eventos.push({ ...juego.foto(estado, variante, `print(${JSON.stringify(dice)})`, linea), dice });
+				eventos.push({ ...juego.foto(estado, variante, `print(${JSON.stringify(dice)})`, linea), dice, ...contexto() });
 			}
 		});
 		declararComandos(env, estado, nivel.comandos, (comando) => {
-			eventos.push(juego.foto(estado, variante, comando, linea));
+			eventos.push({ ...juego.foto(estado, variante, comando, linea), ...contexto() });
 		});
 
 		resultado = observarLlamadas(
-			{ entrar() {}, salir() {}, integrada(l) { linea = l; } },
+			{
+				entrar() {},
+				salir() {},
+				integrada(l, e) { linea = l; entornoDeLlamada = e; },
+				entrarCiclo(l) { ciclos.push({ linea: l, vuelta: 0 }); },
+				vuelta(n) { ciclos[ciclos.length - 1].vuelta = n; },
+				salirCiclo() { ciclos.pop(); },
+			},
 			() => ejecutar(codigo, env),
 		);
 		if (resultado.errores.length > 0) {

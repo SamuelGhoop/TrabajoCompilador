@@ -98,6 +98,20 @@ export interface Evento {
 	pasos: number;
 	cosechas: number;
 	dice?: string;          // lo que Kyra dijo con print (solo en esas fotos)
+	variables?: Variable[]; // las variables que se veían en esa línea
+	ciclos?: Vuelta[];      // los ciclos que estaban corriendo, de afuera hacia adentro
+}
+
+// Variable es una variable del programa con su valor ya escrito como texto.
+export interface Variable {
+	nombre: string;
+	valor: string;
+}
+
+// Vuelta dice en qué vuelta iba el ciclo (for o while) de una línea.
+export interface Vuelta {
+	linea: number;
+	vuelta: number;
 }
 
 const bien = (valor: string | null = null): Accion => ({ ok: true, valor });

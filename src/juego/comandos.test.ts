@@ -77,6 +77,35 @@ test("TestLaLineaEsLaDelComandoDentroDeUnaFuncion", () => {
   assert.equal(juego.eventos[1].linea, 2);
 });
 
+test("TestCadaEventoTraeLasVariablesQueSeVen", () => {
+  // Dentro de la función, el parámetro n tapa a la n global; las funciones
+  // y los comandos no aparecen.
+  const { juego } = correr("let n = 1;\nlet f = function(n) {\n    esperar();\n};\nf(7);");
+  assert.deepEqual(juego.eventos[1].variables, [{ nombre: "n", valor: "7" }]);
+});
+
+test("TestUnValorLargoSeRecorta", () => {
+  const { juego } = correr('let t = "abcdefghijklmnopqrstuvwxyz";\nesperar();');
+  const valor = juego.eventos[1].variables?.[0].valor ?? "";
+  assert.equal(valor.length, 24);
+  assert.ok(valor.endsWith("…"));
+});
+
+test("TestCadaEventoTraeLaVueltaDeSusCiclos", () => {
+  const codigo = "for (let i = 0; i < 2; i = i + 1) {\n    let j = 0;\n    while (j < 2) {\n        esperar();\n        j = j + 1;\n    }\n}\nesperar();";
+  const { juego } = correr(codigo);
+  assert.deepEqual(
+    juego.eventos.slice(1).map((e) => e.ciclos),
+    [
+      [{ linea: 1, vuelta: 1 }, { linea: 3, vuelta: 1 }],
+      [{ linea: 1, vuelta: 1 }, { linea: 3, vuelta: 2 }],
+      [{ linea: 1, vuelta: 2 }, { linea: 3, vuelta: 1 }],
+      [{ linea: 1, vuelta: 2 }, { linea: 3, vuelta: 2 }],
+      [],
+    ],
+  );
+});
+
 test("TestMirarYCosecharDevuelvenTextos", () => {
   const { salida } = correr('print(mirar());\nprint(type(mirar()));', "libre");
   assert.equal(salida, "tierra\nSTRING\n");
