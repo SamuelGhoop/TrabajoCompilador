@@ -31,6 +31,32 @@ test("TestAtenderEtapasDeError", () => {
   assert.equal(s.tokens.length, 3);
 });
 
+test("TestLosComandosDelJuegoSoloExistenAlJugar", () => {
+  const normal = atender({ codigo: 'mover("este");', traza: false });
+  assert.match(normal.errores[0], /identificador no definido: mover/);
+  assert.equal(normal.juego, null);
+
+  const juego = atender({ codigo: 'mover("este");\nprint("hola");', traza: false, nivel: "secuencia" });
+  assert.deepEqual(juego.errores, []);
+  assert.equal(juego.salida, "hola\n");
+  assert.equal(juego.juego?.eventos.length, 2);
+  assert.equal(juego.juego?.gano, false);
+  // Sigue dando tokens y AST, como cualquier programa.
+  assert.ok(juego.arbol?.startsWith("Program\n"));
+});
+
+test("TestAtenderErrorDeJuegoIndicaEtapaDeEjecucion", () => {
+  const r = atender({ codigo: 'mover("norte");\nmover("norte");', traza: false, nivel: "secuencia" });
+  assert.equal(r.etapa, "ejecucion");
+  assert.match(r.errores[0], /línea 2.*cerca/);
+});
+
+test("TestAtenderNivelDesconocido", () => {
+  const r = atender({ codigo: "1", traza: false, nivel: "no_existe" });
+  assert.match(r.errores[0], /nivel desconocido: no_existe/);
+  assert.equal(r.juego, null);
+});
+
 test("TestAtenderConTraza", () => {
   const r = atender({ codigo: "let f = function(n) { if (n == 0) { 0 } else { f(n - 1) } }; f(2)", traza: true });
   assert.deepEqual(r.traza, [

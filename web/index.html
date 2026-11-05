@@ -302,7 +302,7 @@ html, body {
 .out .tk-bad { color: var(--red); text-shadow: var(--glow-red); }
 
 /* ------------------------------------------------------------------- HUD */
-#hud {
+#hud, #hudJuego {
   flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
@@ -329,9 +329,9 @@ html, body {
 .btn:hover:not(:disabled), .btn:focus-visible:not(:disabled) {
   background: var(--phos); color: #000; outline: none; text-shadow: none;
 }
-#hudRight { margin-left: auto; display: flex; flex-wrap: wrap; gap: 0 1.2ch; }
+#hudRight, #hudJuegoDer { margin-left: auto; display: flex; flex-wrap: wrap; gap: 0 1.2ch; }
 /* ------------------------------------------------------- MENÚ DE EJEMPLOS */
-#menuEj {
+#menuEj, #menuNiv {
   position: absolute;
   inset: 0;
   z-index: 41;
@@ -343,22 +343,22 @@ html, body {
   font-size: clamp(8px, 2.3cqh, 30px);
   letter-spacing: .1em;
 }
-#menuEj h2 { margin: 0 0 .4em; font-size: 1.15em; font-weight: normal; text-transform: uppercase; }
+#menuEj h2, #menuNiv h2 { margin: 0 0 .4em; font-size: 1.15em; font-weight: normal; text-transform: uppercase; }
 #menuModos { display: flex; gap: 0 1.2ch; margin-bottom: .6em; }
-#menuCuerpo {
+#menuCuerpo, #nivCuerpo {
   flex: 1 1 auto;
   display: grid;
   grid-template-columns: minmax(0, 21em) minmax(0, 1fr);
   gap: 0 2ch;
   min-height: 0;
 }
-#menuLista { overflow-y: auto; overflow-x: hidden; text-transform: uppercase; letter-spacing: .06em; }
+#menuLista, #nivLista { overflow-y: auto; overflow-x: hidden; text-transform: uppercase; letter-spacing: .06em; }
 .op { white-space: pre; overflow: hidden; text-overflow: ellipsis; padding: 0 .4ch; cursor: pointer; }
 .op::before { content: "  "; }
 /* Resaltado = bloque duro, sin transición (como en ROBCO TERMLINK) */
 .op.hl { background: var(--phos); color: #000; text-shadow: none; }
 .op.hl::before { content: "> "; }
-#menuVista {
+#menuVista, #nivVista {
   margin: 0;
   overflow: hidden;
   white-space: pre;
@@ -370,7 +370,7 @@ html, body {
   border-left: 1px solid rgba(60,255,122,.22);
   padding-left: 1.5ch;
 }
-#menuPie {
+#menuPie, #nivPie {
   margin-top: .6em;
   padding-top: .3em;
   border-top: 1px solid rgba(60,255,122,.22);
@@ -380,9 +380,63 @@ html, body {
   text-transform: uppercase;
 }
 @media (max-width: 760px) {
-  #menuCuerpo { grid-template-columns: 1fr; }
-  #menuVista { display: none; }
+  #menuCuerpo, #nivCuerpo { grid-template-columns: 1fr; }
+  #menuVista, #nivVista { display: none; }
 }
+
+/* -------------------------------------------------------------- MODO JUEGO */
+/* Cada casilla es un solo emoji o carácter sobre un bloque de color. */
+#nivVista { white-space: pre-wrap; }
+#gutter .now { color: #000; background: var(--phos); }
+#panelJuego { min-width: 0; }
+#jDatos {
+  flex: 0 0 auto;
+  padding: .15em .5em;
+  font-size: .85em;
+  letter-spacing: .04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-transform: uppercase;
+  color: var(--phos-bright);
+}
+#jTablero {
+  --celda: 2em;
+  flex: 0 0 auto;
+  display: grid;
+  grid-auto-rows: var(--celda);
+  gap: 1px;
+  justify-content: center;
+  padding: .2em 0 .4em;
+}
+/* El tamaño lo da la cuadrícula: dentro de .celda, "em" valdría otra cosa. */
+.celda {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--celda) * .62);
+  line-height: 1;
+  text-shadow: none;
+  user-select: none;
+}
+.celda.pasillo { background: #101A12; }
+.celda.tierra  { background: #4A3216; color: #A67C40; }
+.celda.brote   { background: #1E2F12; }
+.celda.listo   { background: #23501F; }
+.celda.tanque  { background: #123A4A; color: #3FA7C9; }
+.celda.kyra    { outline: 2px solid var(--phos-bright); outline-offset: -2px; }
+#jMision {
+  flex: 0 0 auto;
+  padding: .2em .5em;
+  border-top: 1px solid rgba(60,255,122,.18);
+  font-size: .82em;
+  letter-spacing: .02em;
+  color: var(--phos-dim);
+  text-shadow: none;
+}
+#jMision b { font-weight: normal; color: var(--phos); }
+#jOut { border-top: 1px solid rgba(60,255,122,.18); font-size: .82em; }
+#jOut, #jOut > div { white-space: pre-wrap; overflow-wrap: anywhere; }
+#jOut > div { min-height: 0; }
 
 /* ---------------------------------------------------------------- AYUDA */
 #help {
@@ -456,7 +510,7 @@ html, body {
               </div>
             </section>
 
-            <section class="panel" aria-label="Resultado">
+            <section class="panel" id="panelSalida" aria-label="Resultado">
               <div class="ptitle" role="tablist">
                 <button class="tab on" data-tab="salida" role="tab">[SALIDA]</button>
                 <button class="tab" data-tab="tokens" role="tab">[TOKENS]</button>
@@ -465,17 +519,40 @@ html, body {
               </div>
               <pre class="out" id="out" aria-live="polite"></pre>
             </section>
+
+            <section class="panel hidden" id="panelJuego" aria-label="Huerto de Kyra">
+              <div class="ptitle"><span id="jTitulo"></span></div>
+              <div id="jDatos"></div>
+              <div id="jTablero" role="img" aria-label="Tablero del huerto"></div>
+              <div id="jMision"></div>
+              <pre class="out" id="jOut" aria-live="polite"></pre>
+            </section>
           </div>
 
           <div id="hud">
             <button class="btn" id="btnRun" title="Ejecutar (Ctrl+Enter)">[▶ EJECUTAR]</button>
             <button class="btn" id="btnStop" title="Detener (Esc)" disabled>[■ DETENER]</button>
             <button class="btn" id="btnEjemplos" title="Cargar un ejemplo (F2)">[EJEMPLOS ▾]</button>
+            <button class="btn" id="btnJuego" title="Aprenda el lenguaje cuidando el huerto de Kyra">[JUEGO]</button>
             <span id="hudRight">
               <button class="btn" id="btnClear" title="Limpiar el editor">[LIMPIAR]</button>
               <button class="btn" id="btnHelp" title="Ayuda (F1)">[?]</button>
               <button class="btn" id="btnMute" title="Sonido">[SND ON]</button>
               <button class="btn" id="btnBoot" title="Volver a encender">[REBOOT]</button>
+            </span>
+          </div>
+
+          <div id="hudJuego" class="hidden">
+            <button class="btn" id="btnJRun" title="Ejecutar (Ctrl+Enter)">[▶ EJECUTAR]</button>
+            <button class="btn" id="btnJPausa" title="Pausar o seguir" disabled>[❚❚ PAUSA]</button>
+            <button class="btn" id="btnJPaso" title="Avanzar un comando">[▶❚ PASO]</button>
+            <button class="btn" id="btnJReiniciar" title="Volver al inicio del tablero (Esc)">[↺ REINICIAR]</button>
+            <button class="btn" id="btnJVel" title="Cambiar la velocidad"></button>
+            <button class="btn hidden" id="btnJSiguiente" title="Ir al siguiente nivel">[SIGUIENTE ▸]</button>
+            <span id="hudJuegoDer">
+              <button class="btn" id="btnJPista" title="Ver una pista">[PISTA]</button>
+              <button class="btn" id="btnJNiveles" title="Menú de niveles (F2)">[NIVELES]</button>
+              <button class="btn" id="btnJSalir" title="Volver a la terminal">[SALIR]</button>
             </span>
           </div>
         </div>
@@ -497,6 +574,7 @@ html, body {
               <li>[AST] el árbol que arma el parser.</li>
               <li>[TRAZA] el árbol de llamadas a funciones.</li>
               <li>[EJEMPLOS ▾] o <span class="k">F2</span> abre el menú de ejemplos: [NORMAL] o [COLOMBIANO] (los mismos, en parce).</li>
+              <li>[JUEGO] abre el huerto de Kyra: niveles para aprender el lenguaje programándola.</li>
             </ul>
             <h3>Errores</h3>
             <ul>
@@ -537,6 +615,16 @@ html, body {
         <div id="menuPie">↑ ↓ MOVER · ← → NORMAL / COLOMBIANO · ENTER CARGAR · ESC CERRAR</div>
       </div>
 
+      <!-- ===================== MENÚ DE NIVELES ===================== -->
+      <div id="menuNiv" class="hidden" role="dialog" aria-label="Niveles">
+        <h2>EL HUERTO DE KYRA · SELECCIONE UN NIVEL</h2>
+        <div id="nivCuerpo">
+          <div id="nivLista" role="listbox"></div>
+          <pre id="nivVista" aria-hidden="true"></pre>
+        </div>
+        <div id="nivPie">↑ ↓ MOVER · ENTER JUGAR · ESC CERRAR</div>
+      </div>
+
       <!-- capas de efecto, siempre encima -->
       <div class="fx" id="fxStatic"></div>
       <div class="fx" id="fxRed"></div>
@@ -566,7 +654,9 @@ function lsSet(k, v)   { try { localStorage.setItem(k, JSON.stringify(v)); } cat
 const el = {};
 ["content","screen","led","boot","bootText","bootBar","bootReady","term","status","editor","gutter",
  "posCursor","out","btnRun","btnStop","btnEjemplos","menuEj","menuLista","menuVista","btnClear","btnHelp","btnMute","btnBoot","help",
- "btnHelpClose","fxStatic","fxRed","fxWhite","powerOn","poLine"].forEach(id => el[id] = $(id));
+ "btnHelpClose","fxStatic","fxRed","fxWhite","powerOn","poLine","hud","panelSalida",
+ "btnJuego","hudJuego","panelJuego","jTitulo","jDatos","jTablero","jMision","jOut","btnJRun","btnJPausa","btnJPaso",
+ "btnJReiniciar","btnJVel","btnJSiguiente","btnJPista","btnJNiveles","btnJSalir","menuNiv","nivLista","nivVista"].forEach(id => el[id] = $(id));
 
 /* ============================================================================
  * 2. AUDIO — Web Audio API, todo generado por osciladores (sin archivos).
@@ -791,12 +881,14 @@ fib(5)
 `;
 
 let lineaConError = null;
+let lineaActiva = null;     // en el juego: la línea del comando que se está mostrando
 
 function renderGutter() {
   const n = el.editor.value.split("\n").length;
   let html = "";
   for (let i = 1; i <= n; i++) {
-    html += (i === lineaConError ? '<span class="bad">' + i + "</span>" : i) + (i < n ? "\n" : "");
+    const clase = i === lineaConError ? "bad" : i === lineaActiva ? "now" : null;
+    html += (clase ? '<span class="' + clase + '">' + i + "</span>" : i) + (i < n ? "\n" : "");
   }
   el.gutter.innerHTML = html;
   el.gutter.scrollTop = el.editor.scrollTop;
@@ -811,7 +903,7 @@ let ultimoKey = 0;
 el.editor.addEventListener("input", () => {
   lineaConError = null;
   renderGutter(); renderPos();
-  lsSet("kyra_codigo", el.editor.value);
+  if (J.activo) alEditarEnJuego(); else lsSet("kyra_codigo", el.editor.value);
   const ahora = performance.now();
   if (ahora - ultimoKey > 35) { SFX.key(); ultimoKey = ahora; }
 });
@@ -1115,6 +1207,15 @@ document.querySelectorAll(".tab[data-tab]").forEach(b => b.addEventListener("cli
 
 window.addEventListener("keydown", e => {
   if (el.term.classList.contains("hidden")) return;
+  if (nivelesAbierto()) {
+    const acciones = {
+      ArrowUp: () => moverMenuNiveles(-1), ArrowDown: () => moverMenuNiveles(1),
+      Enter: () => elegirNivel(J.resaltado), Escape: cerrarMenuNiveles, F2: cerrarMenuNiveles,
+    };
+    if (acciones[e.key]) { e.preventDefault(); acciones[e.key](); }
+    else if (e.key !== "Tab") e.preventDefault();
+    return;
+  }
   // Con el menú de ejemplos abierto, las teclas manejan el menú (y no llegan
   // al editor que está detrás).
   if (menuAbierto()) {
@@ -1127,16 +1228,389 @@ window.addEventListener("keydown", e => {
     else if (e.key !== "Tab") e.preventDefault();
     return;
   }
-  if (e.key === "F2") { e.preventDefault(); abrirMenu(); return; }
-  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); ejecutar(tabActual === "traza"); }
-  else if (e.key === "Escape") {
+  if (e.key === "F2") { e.preventDefault(); if (J.activo) abrirMenuNiveles(); else abrirMenu(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    e.preventDefault();
+    if (J.activo) ejecutarNivel(false); else ejecutar(tabActual === "traza");
+  } else if (e.key === "Escape") {
     if (!el.help.classList.contains("hidden")) toggleHelp(false);
+    else if (J.activo) reiniciarNivel();
     else detener();
   } else if (e.key === "F1") { e.preventDefault(); toggleHelp(el.help.classList.contains("hidden")); }
 });
 
 /* ============================================================================
- * 9. ARRANQUE
+ * 9. MODO JUEGO — el huerto de Kyra
+ *    El navegador no conoce las reglas: manda el programa al servidor, recibe
+ *    una lista de fotos (eventos) y las reproduce. Pausar, avanzar de a un
+ *    paso y cambiar la velocidad solo cambian cómo se recorre esa lista.
+ * ==========================================================================*/
+const CASILLAS = {
+  "_": { clase: "pasillo", texto: "" },
+  ".": { clase: "tierra",  texto: "·" },
+  "#": { clase: "tanque",  texto: "▓" },
+  "b": { clase: "brote",   texto: "🌱" },
+  "t": { clase: "brote",   texto: "🌱" },
+  "L": { clase: "listo",   texto: "🥬" },
+  "T": { clase: "listo",   texto: "🍅" },
+};
+const KYRA_EMOJI = "🐶";
+const VELOCIDADES = [
+  { nombre: "LENTA", ms: 650 }, { nombre: "NORMAL", ms: 300 },
+  { nombre: "RÁPIDA", ms: 100 }, { nombre: "TURBO", ms: 25 },
+];
+const KYRA_GANA  = [" |\\_._/|   ¡GUAU! KYRA MUEVE LA COLA:", " ( ^|^ )"];
+const KYRA_FALTA = [" |\\_._/|   KYRA TERMINÓ, PERO FALTA ALGO:", " ( o|o )"];
+
+function objetoGuardado(clave) {
+  const v = lsGet(clave, {});
+  return v !== null && typeof v === "object" ? v : {};
+}
+
+const J = {
+  activo: false,
+  niveles: [],
+  indice: 0,          // nivel que se está jugando
+  resaltado: 0,       // nivel resaltado en el menú
+  enCurso: null,      // AbortController del pedido al servidor
+  respuesta: null,    // última respuesta del servidor
+  eventos: [],        // fotos que se están reproduciendo
+  i: 0,               // foto que se ve ahora
+  reloj: null,
+  pausado: false,
+  terminado: false,
+  velocidad: VELOCIDADES[lsGet("kyra_juego_vel", 1)] ? lsGet("kyra_juego_vel", 1) : 1,
+  progreso: objetoGuardado("kyra_juego_progreso"), // estrellas por nivel
+};
+
+const nivelActual = () => J.niveles[J.indice];
+const claveCodigo = nivel => "kyra_juego_codigo_" + nivel.id;
+const estrellas = n => "★".repeat(n) + "☆".repeat(3 - n);
+
+async function cargarNiveles() {
+  if (J.niveles.length > 0) return true;
+  try {
+    J.niveles = await (await fetch("/api/niveles")).json();
+    return J.niveles.length > 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+/* --- Menú de niveles --- */
+function nivelesAbierto() { return !el.menuNiv.classList.contains("hidden"); }
+
+function renderMenuNiveles() {
+  el.nivLista.textContent = "";
+  J.niveles.forEach((nivel, i) => {
+    const op = document.createElement("div");
+    op.className = "op" + (i === J.resaltado ? " hl" : "");
+    op.setAttribute("role", "option");
+    const marca = nivel.meta === null ? "" : " " + estrellas(J.progreso[nivel.id] || 0);
+    op.textContent = (i + 1) + " · " + nivel.titulo + marca;
+    op.addEventListener("mouseenter", () => { if (J.resaltado !== i) { J.resaltado = i; SFX.key(); renderMenuNiveles(); } });
+    op.addEventListener("click", () => elegirNivel(i));
+    el.nivLista.append(op);
+  });
+  const nivel = J.niveles[J.resaltado];
+  el.nivVista.textContent = nivel.tema + "\n\n" + nivel.mision + "\n\nCOMANDOS: " + nivel.comandos.join(", ");
+}
+
+async function abrirMenuNiveles() {
+  if (!await cargarNiveles()) {
+    setStatus("NO SE PUDIERON CARGAR LOS NIVELES · ¿ESTÁ CORRIENDO npm run ui?", "err");
+    errorFx();
+    return;
+  }
+  J.resaltado = J.indice;
+  el.menuNiv.classList.remove("hidden");
+  SFX.block();
+  renderMenuNiveles();
+}
+
+function cerrarMenuNiveles() {
+  el.menuNiv.classList.add("hidden");
+  SFX.deny();
+  el.editor.focus();
+}
+
+function moverMenuNiveles(paso) {
+  const n = J.niveles.length;
+  J.resaltado = (J.resaltado + paso + n) % n;
+  SFX.key();
+  renderMenuNiveles();
+}
+
+function elegirNivel(i) {
+  el.menuNiv.classList.add("hidden");
+  if (!J.activo) mostrarModoJuego(true);
+  cargarNivel(i);
+  SFX.confirm();
+  el.editor.focus();
+}
+
+/* --- Entrar y salir: el juego usa el mismo editor de la terminal --- */
+function mostrarModoJuego(activo) {
+  J.activo = activo;
+  el.panelJuego.classList.toggle("hidden", !activo);
+  el.hudJuego.classList.toggle("hidden", !activo);
+  el.panelSalida.classList.toggle("hidden", activo);
+  el.hud.classList.toggle("hidden", activo);
+}
+
+function salirDelJuego() {
+  detenerPartida();
+  mostrarModoJuego(false);
+  lineaConError = null; lineaActiva = null;
+  el.led.classList.remove("busy");
+  el.editor.value = lsGet("kyra_codigo", PROGRAMA_INICIAL) || PROGRAMA_INICIAL;
+  renderGutter(); renderPos();
+  setStatus("LISTO. ESCRIBA UN PROGRAMA Y PULSE [EJECUTAR]");
+  SFX.deny();
+  el.editor.focus();
+}
+
+function cargarNivel(i) {
+  J.indice = i;
+  const nivel = nivelActual();
+  el.editor.value = lsGet(claveCodigo(nivel), nivel.codigoInicial);
+  el.editor.scrollTop = 0;
+  el.jTitulo.textContent = "NIVEL " + (i + 1) + " · " + nivel.titulo;
+  el.jMision.textContent = "";
+  const comandos = document.createElement("b");
+  comandos.textContent = nivel.comandos.map(c => c + "()").join(" ");
+  el.jMision.append(nivel.tema + ". " + nivel.mision + " ", comandos);
+  renderPos();
+  reiniciarNivel();
+}
+
+/* --- Dibujo --- */
+function dibujarTablero(foto) {
+  const filas = foto.tablero.length, columnas = foto.tablero[0].length;
+  el.jTablero.style.setProperty("--celda", Math.min(3, 15 / filas) + "em");
+  el.jTablero.style.gridTemplateColumns = "repeat(" + columnas + ", var(--celda))";
+  el.jTablero.textContent = "";
+  foto.tablero.forEach((fila, f) => {
+    [...fila].forEach((letra, c) => {
+      const casilla = CASILLAS[letra];
+      const celda = document.createElement("div");
+      const hayKyra = foto.kyra.fila === f && foto.kyra.columna === c;
+      celda.className = "celda " + casilla.clase + (hayKyra ? " kyra" : "");
+      celda.textContent = hayKyra ? KYRA_EMOJI : casilla.texto;
+      el.jTablero.append(celda);
+    });
+  });
+}
+
+function dibujarDatos(foto) {
+  const nivel = nivelActual();
+  const partes = [];
+  partes.push("PASOS " + foto.pasos + (nivel.par ? "/" + nivel.par.pasos : ""));
+  partes.push("COSECHA " + foto.cosechas + (nivel.meta ? "/" + nivel.meta.cosechas : ""));
+  if (nivel.tableros.length > 1) partes.push("TABLERO " + (foto.variante + 1) + "/" + nivel.tableros.length);
+  if (nivel.par) partes.push("LÍNEAS ≤" + nivel.par.lineas);
+  if (nivel.meta) partes.push(estrellas(J.progreso[nivel.id] || 0));
+  el.jDatos.textContent = partes.join(" · ");
+}
+
+function dibujarFoto(foto) {
+  dibujarTablero(foto);
+  dibujarDatos(foto);
+  lineaActiva = foto.linea;
+  renderGutter();
+  if (foto.comando) setStatus("L" + foto.linea + " · " + foto.comando, "busy");
+}
+
+function escribirJuego(lineas) {
+  el.jOut.textContent = "";
+  lineas.forEach(l => {
+    const div = document.createElement("div");
+    div.className = l.c || "";
+    div.textContent = l.t;
+    el.jOut.append(div);
+  });
+  el.jOut.scrollTop = 0;
+}
+
+function renderControles() {
+  const reproduciendo = J.eventos.length > 0 && !J.terminado;
+  el.btnJRun.disabled = J.enCurso !== null;
+  el.btnJPausa.disabled = !reproduciendo;
+  el.btnJPausa.textContent = J.pausado ? "[▶ SEGUIR]" : "[❚❚ PAUSA]";
+  el.btnJVel.textContent = "[VEL: " + VELOCIDADES[J.velocidad].nombre + "]";
+  el.led.classList.toggle("busy", J.enCurso !== null || (reproduciendo && !J.pausado));
+}
+
+/* --- Ejecución y reproducción --- */
+function detenerPartida() {
+  if (J.enCurso) J.enCurso.abort();
+  J.enCurso = null;
+  clearTimeout(J.reloj);
+  J.eventos = []; J.i = 0; J.respuesta = null;
+  J.pausado = false; J.terminado = false;
+}
+
+function reiniciarNivel() {
+  detenerPartida();
+  const nivel = nivelActual();
+  const tablero = nivel.tableros[0];
+  lineaConError = null;
+  dibujarFoto({ tablero: tablero.mapa, kyra: tablero.inicio, pasos: 0, cosechas: 0, variante: 0, comando: null, linea: null });
+  escribirJuego([{ t: "Escriba el programa y pulse [▶ EJECUTAR].", c: "dim" }]);
+  el.btnJSiguiente.classList.add("hidden");
+  setStatus("NIVEL " + (J.indice + 1) + ": " + nivel.titulo);
+  renderControles();
+}
+
+/* Cambiar el código invalida lo que se esté mostrando. */
+function alEditarEnJuego() {
+  lsSet(claveCodigo(nivelActual()), el.editor.value);
+  if (J.enCurso || J.eventos.length > 0 || J.respuesta) reiniciarNivel();
+}
+
+async function ejecutarNivel(pausado) {
+  if (J.enCurso) return;
+  reiniciarNivel();
+  const pedido = new AbortController();
+  J.enCurso = pedido;
+  renderControles();
+  setStatus("KYRA ESTÁ LEYENDO EL PROGRAMA...", "busy");
+  SFX.confirm();
+  try {
+    const r = await fetch("/api/ejecutar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ codigo: el.editor.value, nivel: nivelActual().id }),
+      signal: pedido.signal,
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const respuesta = await r.json();
+    if (J.enCurso !== pedido) return;     // se reinició mientras se esperaba
+    J.enCurso = null;
+    J.respuesta = respuesta;
+    J.eventos = respuesta.juego ? respuesta.juego.eventos : [];
+    J.pausado = pausado;
+    if (J.eventos.length > 0) dibujarFoto(J.eventos[0]);
+    programarAvance();
+  } catch (e) {
+    if (e.name === "AbortError" || J.enCurso !== pedido) return;
+    J.enCurso = null;
+    setStatus("SIN CONEXIÓN CON EL INTÉRPRETE · ¿ESTÁ CORRIENDO npm run ui?", "err");
+    escribirJuego([{ t: String(e.message || e), c: "err" }]);
+    errorFx();
+  }
+  renderControles();
+}
+
+function programarAvance() {
+  clearTimeout(J.reloj);
+  if (J.pausado || J.terminado) return;
+  if (J.i >= J.eventos.length - 1) { terminarPartida(); return; }
+  J.reloj = setTimeout(() => { avanzar(); programarAvance(); }, VELOCIDADES[J.velocidad].ms);
+}
+
+function avanzar() {
+  if (J.i >= J.eventos.length - 1) return;
+  J.i += 1;
+  const foto = J.eventos[J.i];
+  dibujarFoto(foto);
+  if (VELOCIDADES[J.velocidad].ms >= 100) {
+    if (foto.comando && foto.comando.startsWith("cosechar")) SFX.bark(); else SFX.key();
+  }
+}
+
+function pasoAPaso() {
+  if (J.enCurso) return;
+  if (J.eventos.length === 0 || J.terminado) { ejecutarNivel(true); return; }
+  J.pausado = true;
+  clearTimeout(J.reloj);
+  avanzar();
+  if (J.i >= J.eventos.length - 1) terminarPartida();
+  renderControles();
+}
+
+function alternarPausa() {
+  if (J.eventos.length === 0 || J.terminado) return;
+  J.pausado = !J.pausado;
+  SFX.block();
+  programarAvance();
+  renderControles();
+}
+
+function terminarPartida() {
+  const r = J.respuesta;
+  const juego = r.juego;
+  const nivel = nivelActual();
+  J.terminado = true;
+  lineaActiva = null;
+  lineaConError = lineaDelError(r.errores[0]);
+  renderGutter();
+
+  const lineas = [];
+  if (r.salida) r.salida.replace(/\n$/, "").split("\n").forEach(t => lineas.push({ t }));
+  if (r.errores.length > 0) {
+    const [frase, cara] = KYRA[r.etapa] || KYRA.ejecucion;
+    lineas.push({ t: frase, c: "kyra" }, { t: cara, c: "kyra" });
+    r.errores.forEach(t => lineas.push({ t, c: "err" }));
+    setStatus(r.errores.length + " ERROR(ES) · ETAPA: " + nombreEtapa(r.etapa), "err");
+    errorFx();
+  } else if (juego.gano) {
+    lineas.push({ t: KYRA_GANA[0], c: "kyra" }, { t: KYRA_GANA[1], c: "kyra" }, { t: juego.mensaje, c: "val" });
+    if (nivel.meta) {
+      lineas.push({ t: estrellas(juego.estrellas) + " · " + juego.pasos + " PASOS · " + juego.lineas + " LÍNEAS", c: "val" });
+      if (nivel.par && juego.pasos > nivel.par.pasos) lineas.push({ t: "Estrella extra: use " + nivel.par.pasos + " pasos o menos.", c: "dim" });
+      if (nivel.par && juego.lineas > nivel.par.lineas) lineas.push({ t: "Estrella extra: use " + nivel.par.lineas + " líneas o menos.", c: "dim" });
+      guardarEstrellas(nivel, juego.estrellas);
+    }
+    setStatus("NIVEL COMPLETADO");
+    SFX.win();
+    el.btnJSiguiente.classList.toggle("hidden", J.indice >= J.niveles.length - 1);
+  } else {
+    lineas.push({ t: KYRA_FALTA[0], c: "kyra" }, { t: KYRA_FALTA[1], c: "kyra" }, { t: juego.mensaje, c: "val" });
+    setStatus("LA META NO SE CUMPLIÓ");
+    SFX.deny();
+  }
+  escribirJuego(lineas);
+  if (J.eventos.length > 0) dibujarDatos(J.eventos[J.i]);
+  renderControles();
+}
+
+function guardarEstrellas(nivel, n) {
+  if (n > (J.progreso[nivel.id] || 0)) {
+    J.progreso[nivel.id] = n;
+    lsSet("kyra_juego_progreso", J.progreso);
+  }
+}
+
+function cambiarVelocidad() {
+  J.velocidad = (J.velocidad + 1) % VELOCIDADES.length;
+  lsSet("kyra_juego_vel", J.velocidad);
+  SFX.block();
+  renderControles();
+}
+
+function mostrarPista() {
+  SFX.block();
+  const pista = document.createElement("div");
+  pista.className = "kyra";
+  pista.textContent = "PISTA: " + nivelActual().pista;
+  el.jOut.append(pista);
+  el.jOut.scrollTop = el.jOut.scrollHeight;
+}
+
+el.btnJuego.addEventListener("click", abrirMenuNiveles);
+el.btnJRun.addEventListener("click", () => ejecutarNivel(false));
+el.btnJPausa.addEventListener("click", alternarPausa);
+el.btnJPaso.addEventListener("click", pasoAPaso);
+el.btnJReiniciar.addEventListener("click", () => { SFX.deny(); reiniciarNivel(); });
+el.btnJVel.addEventListener("click", cambiarVelocidad);
+el.btnJSiguiente.addEventListener("click", () => { cargarNivel(J.indice + 1); SFX.confirm(); el.editor.focus(); });
+el.btnJPista.addEventListener("click", mostrarPista);
+el.btnJNiveles.addEventListener("click", abrirMenuNiveles);
+el.btnJSalir.addEventListener("click", salirDelJuego);
+
+/* ============================================================================
+ * 10. ARRANQUE
  * ==========================================================================*/
 function arrancarTerminal() {
   el.term.classList.remove("hidden");

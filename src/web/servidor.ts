@@ -17,10 +17,12 @@ import { readdirSync, readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 
 import { crearHilo } from "../hilo";
+import { nivelesParaInterfaz } from "../juego/niveles";
 import type { Pedido, Respuesta } from "./ejecutor";
 
 const PUERTO = Number(process.env.PORT ?? 4747);
 const TIEMPO_LIMITE_MS = 60_000;          // fibonacci(34) tarda ~33 s
+const TIEMPO_LIMITE_JUEGO_MS = 10_000;    // ningún nivel necesita más
 const MAX_CODIGO = 1_000_000;             // 1 MB de código como máximo
 
 const raiz = new URL("../../", import.meta.url); // carpeta del proyecto
@@ -44,12 +46,13 @@ function ejecutarEnHilo(pedido: Pedido, cancelar: AbortSignal): Promise<Respuest
 		};
 		const fallo = (mensaje: string): Respuesta => ({
 			tokens: [], programa: null, arbol: null, salida: "", valor: null,
-			errores: [mensaje], etapa: "ejecucion", traza: null,
+			errores: [mensaje], etapa: "ejecucion", traza: null, juego: null,
 		});
 
+		const limite = pedido.nivel ? TIEMPO_LIMITE_JUEGO_MS : TIEMPO_LIMITE_MS;
 		const reloj = setTimeout(() => {
-			terminar(fallo(`Error de ejecución: tiempo agotado (el programa pasó de ${TIEMPO_LIMITE_MS / 1000} s; ¿hay un ciclo infinito?)`));
-		}, TIEMPO_LIMITE_MS);
+			terminar(fallo(`Error de ejecución: tiempo agotado (el programa pasó de ${limite / 1000} s; ¿hay un ciclo infinito?)`));
+		}, limite);
 		cancelar.addEventListener("abort", () => terminar(null));
 
 		hilo.once("message", (respuesta: Respuesta) => terminar(respuesta));
@@ -104,9 +107,15 @@ const servidor = createServer(async (req, res) => {
 			responder(res, 200, "text/html", readFileSync(new URL("web/index.html", raiz), "utf8"));
 		} else if (req.method === "GET" && req.url === "/api/ejemplos") {
 			responder(res, 200, "application/json", JSON.stringify(ejemplos()));
+		} else if (req.method === "GET" && req.url === "/api/niveles") {
+			responder(res, 200, "application/json", JSON.stringify(nivelesParaInterfaz()));
 		} else if (req.method === "POST" && req.url === "/api/ejecutar") {
 			const datos = JSON.parse(await leerCuerpo(req)) as Partial<Pedido>;
-			const pedido: Pedido = { codigo: String(datos.codigo ?? ""), traza: datos.traza === true };
+			const pedido: Pedido = {
+				codigo: String(datos.codigo ?? ""),
+				traza: datos.traza === true,
+				nivel: typeof datos.nivel === "string" ? datos.nivel : null,
+			};
 
 			// Si el navegador cancela (botón DETENER o cierra la pestaña), se
 			// detiene el hilo para no seguir gastando CPU.
