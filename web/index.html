@@ -393,6 +393,23 @@ html, body {
 /* Cada casilla es un solo emoji o carácter sobre un bloque de color. */
 #nivVista { white-space: pre-wrap; }
 #gutter .now { color: #000; background: var(--phos); }
+/* En el juego, una barra de luz marca la línea del comando que hace Kyra; con
+   cada comando destella, al mismo tiempo que las luces de Kyra en 3D. */
+#lineaViva {
+  position: absolute; left: 0; right: 0; height: 1.4em; z-index: 0;
+  background: rgba(60,255,122,.10);
+  border-left: 3px solid var(--phos);
+  box-shadow: 0 0 14px rgba(60,255,122,.35), inset 0 0 18px rgba(60,255,122,.12);
+  pointer-events: none;
+  transition: top 90ms steps(2, end);
+}
+#lineaViva.pulso { animation: lineaPulso 420ms ease-out 1; }
+@keyframes lineaPulso {
+  0%   { background: rgba(60,255,122,.45); box-shadow: 0 0 30px rgba(60,255,122,.9), inset 0 0 24px rgba(60,255,122,.5); }
+  100% { background: rgba(60,255,122,.10); box-shadow: 0 0 14px rgba(60,255,122,.35), inset 0 0 18px rgba(60,255,122,.12); }
+}
+#editor { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { #lineaViva.pulso { animation: none; } }
 #panelJuego { min-width: 0; }
 #jDatos {
   flex: 0 0 auto;
@@ -529,6 +546,7 @@ html, body {
               <div class="ptitle"><span>PROGRAMA.SSG</span><span id="posCursor">L1 C1</span></div>
               <div id="editorWrap">
                 <div id="gutter" aria-hidden="true">1</div>
+                <div id="lineaViva" class="hidden" aria-hidden="true"></div>
                 <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"
                           aria-label="Código del programa"></textarea>
               </div>
@@ -684,7 +702,7 @@ const el = {};
  "posCursor","out","btnRun","btnStop","btnEjemplos","menuEj","menuLista","menuVista","btnClear","btnHelp","btnMute","btnBoot","help",
  "btnHelpClose","fxStatic","fxRed","fxWhite","powerOn","poLine","hud","panelSalida",
  "btnJuego","hudJuego","panelJuego","jTitulo","jDatos","jTablero","jMision","jOut","btnJRun","btnJPausa","btnJPaso",
- "btnJReiniciar","btnJVel","btnJVista","jEscena","btnJSiguiente","btnJPista","btnJNiveles","btnJSalir","menuNiv","nivLista","nivVista"].forEach(id => el[id] = $(id));
+ "btnJReiniciar","btnJVel","btnJVista","jEscena","lineaViva","btnJSiguiente","btnJPista","btnJNiveles","btnJSalir","menuNiv","nivLista","nivVista"].forEach(id => el[id] = $(id));
 
 /* ============================================================================
  * 2. AUDIO — Web Audio API, todo generado por osciladores (sin archivos).
@@ -734,6 +752,8 @@ const SFX = {
   power()   { this.blip(70, 0.55, "sine", 0.30, 190); },
   load()    { this.blip(1500, 0.018, "square", 0.07); },
   block()   { this.blip(700, 0.03, "square", 0.10); },
+  pop()     { this.blip(380, 0.07, "sine", 0.28, 900); this.blip(1400, 0.03, "square", 0.08, null, 0.05); }, // cosecha
+  estrella(i) { this.blip([784, 988, 1318][i] || 1318, 0.16, "square", 0.18, null); this.blip(([784, 988, 1318][i] || 1318) * 1.5, 0.12, "square", 0.10, null, 0.06); },
   bark()    { this.blip(520, 0.09, "sawtooth", 0.22, 300); this.blip(560, 0.11, "sawtooth", 0.22, 280, 0.16); }, // ¡guau guau!
 
   setMuted(m) {
@@ -920,6 +940,29 @@ function renderGutter() {
   }
   el.gutter.innerHTML = html;
   el.gutter.scrollTop = el.editor.scrollTop;
+  renderLineaViva();
+}
+
+/* La barra de luz del juego, a la altura de la línea activa (y el editor se
+   desplaza si esa línea no se ve). */
+function renderLineaViva() {
+  const ver = J.activo && lineaActiva !== null;
+  el.lineaViva.classList.toggle("hidden", !ver);
+  if (!ver) return;
+  const estilo = getComputedStyle(el.editor);
+  const alto = parseFloat(estilo.lineHeight);
+  const arriba = parseFloat(estilo.paddingTop) + (lineaActiva - 1) * alto;
+  if (arriba < el.editor.scrollTop) el.editor.scrollTop = arriba - alto;
+  else if (arriba + alto > el.editor.scrollTop + el.editor.clientHeight) el.editor.scrollTop = arriba - el.editor.clientHeight + 2 * alto;
+  el.lineaViva.style.left = el.editor.offsetLeft + "px";
+  el.lineaViva.style.height = alto + "px";
+  el.lineaViva.style.top = (el.editor.offsetTop + arriba - el.editor.scrollTop) + "px";
+}
+
+function destellarLinea() {
+  el.lineaViva.classList.remove("pulso");
+  void el.lineaViva.offsetWidth; // reinicia la animación
+  el.lineaViva.classList.add("pulso");
 }
 
 function renderPos() {
@@ -935,7 +978,7 @@ el.editor.addEventListener("input", () => {
   const ahora = performance.now();
   if (ahora - ultimoKey > 35) { SFX.key(); ultimoKey = ahora; }
 });
-el.editor.addEventListener("scroll", () => { el.gutter.scrollTop = el.editor.scrollTop; });
+el.editor.addEventListener("scroll", () => { el.gutter.scrollTop = el.editor.scrollTop; renderLineaViva(); });
 ["keyup", "click"].forEach(ev => el.editor.addEventListener(ev, renderPos));
 el.editor.addEventListener("keydown", e => {
   if (e.key === "Tab" && !e.ctrlKey && !e.altKey) {            // Tab inserta 4 espacios
@@ -1401,6 +1444,7 @@ function salirDelJuego() {
 
 function cargarNivel(i) {
   J.indice = i;
+  if (window.Huerto3D) window.Huerto3D.ambiente(i);
   const nivel = nivelActual();
   el.editor.value = lsGet(claveCodigo(nivel), nivel.codigoInicial);
   el.editor.scrollTop = 0;
@@ -1463,7 +1507,10 @@ function dibujarFoto(foto, anterior) {
   dibujarDatos(foto);
   lineaActiva = foto.linea;
   renderGutter();
-  if (foto.comando) setStatus("L" + foto.linea + " · " + foto.comando, "busy");
+  if (foto.comando) {
+    setStatus("L" + foto.linea + " · " + foto.comando, "busy");
+    destellarLinea();
+  }
 }
 
 /* --- Vista 3D: la dibuja web/3d/huerto3d.js con las mismas fotos. Si no
@@ -1591,7 +1638,10 @@ function avanzar() {
   const foto = J.eventos[J.i];
   dibujarFoto(foto, J.eventos[J.i - 1]);
   if (VELOCIDADES[J.velocidad].ms >= 100) {
-    if (foto.comando && foto.comando.startsWith("cosechar")) SFX.bark(); else SFX.key();
+    const comando = foto.comando || "";
+    if (comando.startsWith("cosechar")) SFX.pop();
+    else if (comando.startsWith("reportar")) SFX.bark();
+    else SFX.key();
   }
 }
 
@@ -1633,7 +1683,7 @@ function terminarPartida() {
   } else if (juego.gano) {
     lineas.push({ t: KYRA_GANA[0], c: "kyra" }, { t: KYRA_GANA[1], c: "kyra" }, { t: juego.mensaje, c: "val" });
     if (nivel.meta) {
-      lineas.push({ t: estrellas(juego.estrellas) + " · " + juego.pasos + " PASOS · " + juego.lineas + " LÍNEAS", c: "val" });
+      lineas.push({ t: estrellas(0) + " · " + juego.pasos + " PASOS · " + juego.lineas + " LÍNEAS", c: "val estrellas" });
       if (nivel.par && juego.pasos > nivel.par.pasos) lineas.push({ t: "Estrella extra: use " + nivel.par.pasos + " pasos o menos.", c: "dim" });
       if (nivel.par && juego.lineas > nivel.par.lineas) lineas.push({ t: "Estrella extra: use " + nivel.par.lineas + " líneas o menos.", c: "dim" });
       guardarEstrellas(nivel, juego.estrellas);
@@ -1647,9 +1697,23 @@ function terminarPartida() {
     SFX.deny();
   }
   escribirJuego(lineas);
+  const linea = el.jOut.querySelector(".estrellas");
+  if (linea && juego.gano) mostrarEstrellas(linea, juego.estrellas, " · " + juego.pasos + " PASOS · " + juego.lineas + " LÍNEAS");
   if (usar3D() && vista3D.montada) window.Huerto3D.final(r.errores.length > 0 ? "error" : juego.gano ? "gano" : "falta");
   if (J.eventos.length > 0) dibujarDatos(J.eventos[J.i]);
   renderControles();
+}
+
+/* Las estrellas ganadas se encienden una por una, cada una con su nota. */
+function mostrarEstrellas(linea, n, resto) {
+  for (let i = 0; i < n; i++) {
+    setTimeout(() => {
+      if (!linea.isConnected) return;
+      linea.textContent = estrellas(i + 1) + resto;
+      linea.classList.remove("fresh"); void linea.offsetWidth; linea.classList.add("fresh");
+      SFX.estrella(i);
+    }, 650 + i * 380);
+  }
 }
 
 function guardarEstrellas(nivel, n) {
