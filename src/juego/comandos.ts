@@ -28,6 +28,10 @@ export interface ResultadoJuego {
 
 const error = (mensaje: string): juego.Accion => ({ ok: false, error: mensaje });
 
+// Cada print también deja una foto, para que el navegador muestre lo que Kyra
+// dice en el momento justo. Un ciclo que imprime mucho no llena la lista.
+const MAX_DICHOS = 100;
+
 // sinArgumentos adapta un comando que no recibe argumentos.
 function sinArgumentos(accion: (estado: juego.Estado) => juego.Accion) {
 	return (estado: juego.Estado, args: object.Obj[]): juego.Accion =>
@@ -126,6 +130,7 @@ export function jugar(codigo: string, nivel: Nivel, escribir: Salida): { resulta
 	});
 
 	let resultado: Resultado = { errores: [], valor: null };
+	let dichos = 0;
 	let pasos = 0;
 	let cosechas = 0;
 	for (const [variante, tablero] of nivel.tableros.entries()) {
@@ -133,7 +138,14 @@ export function jugar(codigo: string, nivel: Nivel, escribir: Salida): { resulta
 		eventos.push(juego.foto(estado, variante, null, null));
 
 		let linea: number | null = null;
-		const env = new Environment(null, escribir);
+		const env = new Environment(null, (texto) => {
+			escribir(texto);
+			if (dichos < MAX_DICHOS) {
+				dichos += 1;
+				const dice = texto.replace(/\n$/, "");
+				eventos.push({ ...juego.foto(estado, variante, `print(${JSON.stringify(dice)})`, linea), dice });
+			}
+		});
 		declararComandos(env, estado, nivel.comandos, (comando) => {
 			eventos.push(juego.foto(estado, variante, comando, linea));
 		});

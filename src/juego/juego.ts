@@ -97,6 +97,7 @@ export interface Evento {
 	kyra: Posicion;
 	pasos: number;
 	cosechas: number;
+	dice?: string;          // lo que Kyra dijo con print (solo en esas fotos)
 }
 
 const bien = (valor: string | null = null): Accion => ({ ok: true, valor });

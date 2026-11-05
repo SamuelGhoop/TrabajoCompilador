@@ -163,3 +163,23 @@ test("TestUnaVariableTapaAUnComando", () => {
 function jugarPequeno(codigo: string) {
   return jugar(codigo, pequeno, () => {});
 }
+
+test("TestPrintDejaUnEventoConLoQueDijoKyra", () => {
+  const { juego, salida } = correr(`plantar();\nprint("hola", 1);\nesperar();`);
+  assert.equal(salida, "hola 1\n");
+  const dichos = juego.eventos.filter((e) => e.dice !== undefined);
+  assert.equal(dichos.length, 1);
+  assert.equal(dichos[0].dice, "hola 1");
+  assert.equal(dichos[0].linea, 2);
+  assert.equal(dichos[0].pasos, 1); // hablar no gasta pasos
+});
+
+test("TestDigaEnParceTambienHabla", () => {
+  const { juego } = correr(`diga("¡qué chimba, parce!");`);
+  assert.deepEqual(juego.eventos.map((e) => e.dice).filter(Boolean), ["¡qué chimba, parce!"]);
+});
+
+test("TestUnCicloQueImprimeMuchoNoLlenaLosEventos", () => {
+  const { juego } = correr(`for (let i = 0; i < 1000; i = i + 1) { print(i); }`);
+  assert.ok(juego.eventos.filter((e) => e.dice !== undefined).length <= 100);
+});
