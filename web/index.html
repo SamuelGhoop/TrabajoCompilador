@@ -1290,11 +1290,6 @@ const VELOCIDADES = [
 const KYRA_GANA  = [" |\\_._/|   ¡GUAU! KYRA MUEVE LA COLA:", " ( ^|^ )"];
 const KYRA_FALTA = [" |\\_._/|   KYRA TERMINÓ, PERO FALTA ALGO:", " ( o|o )"];
 
-function objetoGuardado(clave) {
-  const v = lsGet(clave, {});
-  return v !== null && typeof v === "object" ? v : {};
-}
-
 const J = {
   activo: false,
   niveles: [],
@@ -1308,10 +1303,12 @@ const J = {
   pausado: false,
   terminado: false,
   velocidad: VELOCIDADES[lsGet("kyra_juego_vel", 1)] ? lsGet("kyra_juego_vel", 1) : 1,
-  progreso: objetoGuardado("kyra_juego_progreso"), // estrellas por nivel
+  progreso: {},       // estrellas por nivel: empiezan en 0 cada vez que se abre la página (para mostrarlo en clase)
   vista3d: lsGet("kyra_juego_3d", true) !== false,  // huerto 3D o tablero 2D
   foto: null,         // la foto que se está mostrando
 };
+
+try { localStorage.removeItem("kyra_juego_progreso"); } catch (e) {}
 
 const nivelActual = () => J.niveles[J.indice];
 const claveCodigo = nivel => "kyra_juego_codigo_" + nivel.id;
@@ -1658,7 +1655,6 @@ function terminarPartida() {
 function guardarEstrellas(nivel, n) {
   if (n > (J.progreso[nivel.id] || 0)) {
     J.progreso[nivel.id] = n;
-    lsSet("kyra_juego_progreso", J.progreso);
   }
 }
 
