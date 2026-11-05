@@ -20,6 +20,7 @@ import { crearHilo } from "../hilo";
 import { nivelesParaInterfaz } from "../juego/niveles";
 import type { Pedido, Respuesta } from "./ejecutor";
 import { rutaEstatica } from "./estaticos";
+import { revisar } from "./revisor";
 
 const PUERTO = Number(process.env.PORT ?? 4747);
 const TIEMPO_LIMITE_MS = 60_000;          // fibonacci(34) tarda ~33 s
@@ -110,6 +111,10 @@ const servidor = createServer(async (req, res) => {
 			responder(res, 200, "application/json", JSON.stringify(ejemplos()));
 		} else if (req.method === "GET" && req.url === "/api/niveles") {
 			responder(res, 200, "application/json", JSON.stringify(nivelesParaInterfaz()));
+		} else if (req.method === "POST" && req.url === "/api/revisar") {
+			// Revisión mientras se escribe: solo lexer y parser, sin ejecutar.
+			const datos = JSON.parse(await leerCuerpo(req)) as { codigo?: unknown };
+			responder(res, 200, "application/json", JSON.stringify(revisar(String(datos.codigo ?? ""))));
 		} else if (req.method === "POST" && req.url === "/api/ejecutar") {
 			const datos = JSON.parse(await leerCuerpo(req)) as Partial<Pedido>;
 			const pedido: Pedido = {
