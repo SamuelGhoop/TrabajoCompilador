@@ -132,7 +132,7 @@ El botón **[JUEGO]** de la interfaz web abre un juego para aprender el lenguaje
 - **Modo proyector:** `F8` o **[PROYECTOR]** quita las líneas y el brillo del CRT, aclara el texto tenue, agranda el editor y la salida e ilumina más la escena 3D, para que se lea bien en un proyector.
 - **Música:** un bucle chiptune hecho con osciladores, que se apaga con **[MÚSICA]** o con el botón de sonido.
 
-**Controles.** Ejecutar, pausar, avanzar paso a paso, reiniciar, cambiar la velocidad, cambiar la vista, ver una pista y volver al menú de niveles. Mientras Kyra se mueve, se resalta la línea del comando que está haciendo. El código de cada nivel se guarda en el navegador (`localStorage`); las estrellas vuelven a cero cada vez que se abre la página, para poder mostrar el juego desde el principio.
+**Controles.** Ejecutar, pausar, avanzar paso a paso, reiniciar, cambiar la velocidad, cambiar la vista, ver una pista y volver al menú de niveles. Mientras Kyra se mueve, se resalta la línea del comando que está haciendo. Cada nivel empieza con un código de ejemplo sin terminar. Lo que se escribe se conserva al cambiar de nivel, pero al abrir la página otra vez cada nivel vuelve a su código inicial y las estrellas a cero, para poder mostrar el juego desde el principio.
 
 **Ciclos infinitos.** Cada nivel tiene un tope de pasos (la batería de Kyra). Un ciclo que no llama comandos no gasta pasos: lo frena un tiempo límite de 10 s, y `Esc` lo cancela antes.
 

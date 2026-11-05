@@ -1424,7 +1424,12 @@ const J = {
 try { localStorage.removeItem("kyra_juego_progreso"); } catch (e) {}
 
 const nivelActual = () => J.niveles[J.indice];
-const claveCodigo = nivel => "kyra_juego_codigo_" + nivel.id;
+// El código de cada nivel se guarda solo mientras la página está abierta: al
+// abrirla, cada nivel vuelve a su código inicial sin terminar (para la clase).
+const codigos = {};
+try {
+  Object.keys(localStorage).filter(k => k.startsWith("kyra_juego_codigo_")).forEach(k => localStorage.removeItem(k));
+} catch (e) {}
 const estrellas = n => "★".repeat(n) + "☆".repeat(3 - n);
 
 async function cargarNiveles() {
@@ -1656,7 +1661,7 @@ function cargarNivel(i) {
     window.Huerto3D.presentar(); // la cámara da una vuelta al entrar al nivel
   }
   const nivel = nivelActual();
-  el.editor.value = lsGet(claveCodigo(nivel), nivel.codigoInicial);
+  el.editor.value = codigos[nivel.id] ?? nivel.codigoInicial;
   el.editor.scrollTop = 0;
   el.jTitulo.textContent = "NIVEL " + (i + 1) + " · " + nivel.titulo;
   el.jMision.textContent = "";
@@ -1869,7 +1874,7 @@ function reiniciarNivel() {
 
 /* Cambiar el código invalida lo que se esté mostrando. */
 function alEditarEnJuego() {
-  lsSet(claveCodigo(nivelActual()), el.editor.value);
+  codigos[nivelActual().id] = el.editor.value;
   if (J.enCurso || J.eventos.length > 0 || J.respuesta) reiniciarNivel();
 }
 
