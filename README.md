@@ -120,7 +120,9 @@ El botón **[JUEGO]** de la interfaz web abre un juego para aprender el lenguaje
 
 **Reglas.** Cada comando cuesta 1 paso y hace crecer los brotes 1 ciclo, y un brote tarda 3 ciclos: `plantar(); esperar(); esperar(); cosechar();`. Chocar, plantar fuera de la tierra o cosechar algo que no está listo detiene el programa con un error de ejecución, igual que una división por cero. Ganar da 1 estrella, y cumplir el par de pasos y el de líneas da una más cada uno. Las líneas vacías y los comentarios no cuentan.
 
-**Controles.** Ejecutar, pausar, avanzar paso a paso, reiniciar, cambiar la velocidad, ver una pista y volver al menú de niveles. Mientras Kyra se mueve, se resalta la línea del comando que está haciendo. Las estrellas y el código de cada nivel se guardan en el navegador (`localStorage`).
+**Vista 3D.** El huerto se ve en 3D (three.js) y **[VISTA: 3D/2D]** cambia al tablero de emojis. Kyra camina, choca, planta, cosecha, mira, espera, ladra al reportar, celebra al ganar y se pone triste al perder; los cultivos aparecen, crecen y suben al cosecharlos. La cámara se ajusta sola a cada tablero: arrastrar gira, la rueda acerca y doble clic vuelve a centrar. Los modelos y sus 10 animaciones se hicieron en Blender (`web/3d/modelos/huerto.blend`) y se exportan a `huerto.glb`. El visor no conoce las reglas: compara cada foto con la anterior para saber qué animar. Si el navegador no tiene WebGL, el juego sigue en 2D, y si falta el `.glb`, usa figuras simples con las mismas animaciones. three.js se instala con `npm install` y lo sirve el mismo servidor, así que funciona sin internet.
+
+**Controles.** Ejecutar, pausar, avanzar paso a paso, reiniciar, cambiar la velocidad, cambiar la vista, ver una pista y volver al menú de niveles. Mientras Kyra se mueve, se resalta la línea del comando que está haciendo. Las estrellas y el código de cada nivel se guardan en el navegador (`localStorage`).
 
 **Ciclos infinitos.** Cada nivel tiene un tope de pasos (la batería de Kyra). Un ciclo que no llama comandos no gasta pasos: lo frena un tiempo límite de 10 s, y `Esc` lo cancela antes.
 
@@ -266,8 +268,9 @@ Para agregar un caso, basta con crear `tests/validos/nombre.ssg` (o en `errores/
 | `src/repl/` | REPL interactivo y `:traza`. |
 | `src/main.ts`, `src/kyra.ts` | Punto de entrada y la bienvenida de Kyra. |
 | `src/hilo.ts` | Crea los hilos con pila de 256 MB donde corre el intérprete. |
-| `src/web/` | Servidor de la interfaz web y el ejecutor de cada programa. |
+| `src/web/` | Servidor de la interfaz web, el ejecutor de cada programa y las rutas de los archivos del modo 3D (`estaticos.ts`). |
 | `src/juego/` | El huerto de Kyra: reglas (`juego.ts`), niveles (`niveles.ts`) y comandos del lenguaje (`comandos.ts`). |
-| `web/index.html` | La interfaz web (un solo archivo, sin dependencias). |
+| `web/index.html` | La interfaz web (un solo archivo). |
+| `web/3d/` | El visor 3D del huerto (`huerto3d.js`, con three.js) y los modelos de Blender (`modelos/`). |
 | `examples/`, `tests/` | Programas de ejemplo y casos de prueba. |
 | `docs/DISENO.md` | Documento de diseño: gramática, arquitectura, decisiones y limitaciones. |
