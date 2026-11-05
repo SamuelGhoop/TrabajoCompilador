@@ -469,6 +469,34 @@ html, body {
 }
 #jMision b { font-weight: normal; color: var(--phos); }
 #jOut { flex: 0 1 8em; min-height: 4.5em; border-top: 1px solid rgba(60,255,122,.18); font-size: .82em; }
+#jOut.inspeccion { flex-basis: 15em; }
+#jOut .ast { color: var(--phos); text-shadow: none; }
+
+/* Las tres etapas del intérprete, en el título del panel del juego. */
+#jEtapas { margin-left: auto; display: flex; gap: 0 .8ch; white-space: nowrap; }
+#jEtapas span { opacity: .45; }
+#jEtapas span.run { color: var(--amber); opacity: 1; animation: amberblink .5s steps(1, end) infinite; }
+#jEtapas span.ok  { color: var(--phos-bright); opacity: 1; text-shadow: var(--glow); }
+#jEtapas span.mal { color: var(--red); opacity: 1; text-shadow: var(--glow-red); }
+#jEtapas i { font-style: normal; opacity: .45; }
+body.modo-juego #gutter { cursor: pointer; }
+body.modo-juego #gutter:hover { color: var(--phos); }
+
+/* Pantalla de título del juego. */
+#tituloJuego {
+  position: absolute; inset: 0; z-index: 42;
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--bg); padding: clamp(10px, 3vmin, 40px);
+  text-align: center; text-transform: uppercase; cursor: pointer;
+}
+#tituloJuego h1 {
+  margin: .3em 0 0; font-weight: normal; font-size: 2.6em; letter-spacing: .3em;
+  color: var(--phos-bright); text-shadow: 0 0 8px currentColor, 0 0 32px rgba(60,255,122,.75);
+}
+#tituloSub { margin-top: .3em; font-size: .85em; letter-spacing: .25em; color: var(--phos-dim); text-shadow: none; }
+#tituloEscena { position: relative; flex: 1 1 auto; width: 100%; min-height: 0; }
+#tituloEscena canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#tituloPie { letter-spacing: .25em; font-size: .9em; animation: amberblink 1.1s steps(1, end) infinite; }
 
 /* En el juego el monitor deja el 4:3 y llena la ventana, y el huerto se
    queda con la mayor parte; el editor conserva el ancho del código inicial. */
@@ -563,7 +591,11 @@ html, body {
             </section>
 
             <section class="panel hidden" id="panelJuego" aria-label="Huerto de Kyra">
-              <div class="ptitle"><span id="jTitulo"></span></div>
+              <div class="ptitle"><span id="jTitulo"></span>
+                <span id="jEtapas" title="Las etapas del intérprete mientras corre el programa">
+                  <span id="etLexer">LEXER</span><i>→</i><span id="etParser">PARSER</span><i>→</i><span id="etEval">EVALUADOR</span>
+                </span>
+              </div>
               <div id="jDatos"></div>
               <div id="jTablero" role="img" aria-label="Tablero del huerto"></div>
               <div id="jEscena" class="hidden" role="img" aria-label="Huerto en 3D">
@@ -594,8 +626,10 @@ html, body {
             <button class="btn" id="btnJReiniciar" title="Volver al inicio del tablero (Esc)">[↺ REINICIAR]</button>
             <button class="btn" id="btnJVel" title="Cambiar la velocidad"></button>
             <button class="btn hidden" id="btnJVista" title="Cambiar entre el huerto 3D y el tablero 2D"></button>
+            <button class="btn hidden" id="btnJCamara" title="La cámara queda fija o sigue a Kyra"></button>
             <button class="btn hidden" id="btnJSiguiente" title="Ir al siguiente nivel">[SIGUIENTE ▸]</button>
             <span id="hudJuegoDer">
+              <button class="btn" id="btnJMusica" title="Música de fondo"></button>
               <button class="btn" id="btnJPista" title="Ver una pista">[PISTA]</button>
               <button class="btn" id="btnJNiveles" title="Menú de niveles (F2)">[NIVELES]</button>
               <button class="btn" id="btnJSalir" title="Volver a la terminal">[SALIR]</button>
@@ -662,6 +696,13 @@ html, body {
       </div>
 
       <!-- ===================== MENÚ DE NIVELES ===================== -->
+      <div id="tituloJuego" class="hidden" role="dialog" aria-label="El huerto de Kyra">
+        <h1>EL HUERTO DE KYRA</h1>
+        <div id="tituloSub">PROGRAME A KYRA CON EL LENGUAJE DE KYRACOMPILER</div>
+        <div id="tituloEscena" aria-hidden="true"></div>
+        <div id="tituloPie">[ ENTER PARA EMPEZAR · ESC PARA VOLVER ]</div>
+      </div>
+
       <div id="menuNiv" class="hidden" role="dialog" aria-label="Niveles">
         <h2>EL HUERTO DE KYRA · SELECCIONE UN NIVEL</h2>
         <div id="nivCuerpo">
@@ -702,7 +743,7 @@ const el = {};
  "posCursor","out","btnRun","btnStop","btnEjemplos","menuEj","menuLista","menuVista","btnClear","btnHelp","btnMute","btnBoot","help",
  "btnHelpClose","fxStatic","fxRed","fxWhite","powerOn","poLine","hud","panelSalida",
  "btnJuego","hudJuego","panelJuego","jTitulo","jDatos","jTablero","jMision","jOut","btnJRun","btnJPausa","btnJPaso",
- "btnJReiniciar","btnJVel","btnJVista","jEscena","lineaViva","btnJSiguiente","btnJPista","btnJNiveles","btnJSalir","menuNiv","nivLista","nivVista"].forEach(id => el[id] = $(id));
+ "btnJReiniciar","btnJVel","btnJVista","jEscena","lineaViva","btnJCamara","btnJMusica","tituloJuego","tituloEscena","btnJSiguiente","btnJPista","btnJNiveles","btnJSalir","menuNiv","nivLista","nivVista"].forEach(id => el[id] = $(id));
 
 /* ============================================================================
  * 2. AUDIO — Web Audio API, todo generado por osciladores (sin archivos).
@@ -752,6 +793,7 @@ const SFX = {
   power()   { this.blip(70, 0.55, "sine", 0.30, 190); },
   load()    { this.blip(1500, 0.018, "square", 0.07); },
   block()   { this.blip(700, 0.03, "square", 0.10); },
+  hablar()  { for (let i = 0; i < 4; i++) this.blip(320 + Math.random() * 520, 0.045, "square", 0.08, null, i * 0.06); },
   pop()     { this.blip(380, 0.07, "sine", 0.28, 900); this.blip(1400, 0.03, "square", 0.08, null, 0.05); }, // cosecha
   estrella(i) { this.blip([784, 988, 1318][i] || 1318, 0.16, "square", 0.18, null); this.blip(([784, 988, 1318][i] || 1318) * 1.5, 0.12, "square", 0.10, null, 0.06); },
   bark()    { this.blip(520, 0.09, "sawtooth", 0.22, 300); this.blip(560, 0.11, "sawtooth", 0.22, 280, 0.16); }, // ¡guau guau!
@@ -1278,6 +1320,11 @@ document.querySelectorAll(".tab[data-tab]").forEach(b => b.addEventListener("cli
 
 window.addEventListener("keydown", e => {
   if (el.term.classList.contains("hidden")) return;
+  if (tituloAbierto()) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cerrarTitulo(true); }
+    else if (e.key === "Escape") { e.preventDefault(); cerrarTitulo(false); }
+    return;
+  }
   if (nivelesAbierto()) {
     const acciones = {
       ArrowUp: () => moverMenuNiveles(-1), ArrowDown: () => moverMenuNiveles(1),
@@ -1348,6 +1395,7 @@ const J = {
   velocidad: VELOCIDADES[lsGet("kyra_juego_vel", 1)] ? lsGet("kyra_juego_vel", 1) : 1,
   progreso: {},       // estrellas por nivel: empiezan en 0 cada vez que se abre la página (para mostrarlo en clase)
   vista3d: lsGet("kyra_juego_3d", true) !== false,  // huerto 3D o tablero 2D
+  seguir: false,      // la cámara 3D sigue a Kyra
   foto: null,         // la foto que se está mostrando
 };
 
@@ -1384,6 +1432,123 @@ function renderMenuNiveles() {
   });
   const nivel = J.niveles[J.resaltado];
   el.nivVista.textContent = nivel.tema + "\n\n" + nivel.mision + "\n\nCOMANDOS: " + nivel.comandos.join(", ");
+}
+
+/* --- Pantalla de título: Kyra en 3D girando sobre su bandeja. --- */
+let escenaTitulo = null;
+const tituloAbierto = () => !el.tituloJuego.classList.contains("hidden");
+
+async function abrirTitulo() {
+  if (!vista3D.lista) { abrirMenuNiveles(); return; }
+  el.tituloJuego.classList.remove("hidden");
+  SFX.confirm();
+  Musica.empezar();
+  try {
+    const escena = await window.Huerto3D.titulo(el.tituloEscena);
+    if (tituloAbierto() && !escenaTitulo) escenaTitulo = escena;
+    else escena.cerrar(); // se cerró mientras cargaba
+  } catch (e) {
+    console.warn("[huerto3d]", e);
+  }
+}
+
+function cerrarTitulo(empezar) {
+  el.tituloJuego.classList.add("hidden");
+  if (escenaTitulo) { escenaTitulo.cerrar(); escenaTitulo = null; }
+  if (empezar) abrirMenuNiveles();
+  else { if (!J.activo) Musica.parar(); SFX.deny(); }
+}
+
+el.tituloJuego.addEventListener("click", () => cerrarTitulo(true));
+
+/* --- Música de fondo: un bucle chiptune hecho con osciladores, como los
+       demás sonidos. Suena solo en el juego y respeta el botón de sonido. --- */
+const Musica = {
+  activa: lsGet("kyra_musica", true) !== false,
+  sonando: false, reloj: null, paso: 0, siguiente: 0, salida: null, ruido: null,
+  CORCHEA: 60 / 112 / 2,
+  // La menor, Fa, Do y Sol (notas MIDI de cada acorde: raíz, tercera, quinta)
+  ACORDES: [[57, 60, 64], [53, 57, 60], [60, 64, 67], [55, 59, 62]],
+  ARPEGIO: [0, 1, 2, 3, 2, 1, 0, 1],
+  MELODIA: [76, null, 74, 72, null, 72, 74, null, 72, null, 69, null, 67, 69, null, null,
+            72, null, 74, 76, null, 79, 76, null, 74, null, 72, null, 71, null, 74, null],
+
+  empezar() {
+    if (!this.activa || this.sonando || !SFX.ensure()) return;
+    SFX.resume();
+    const ctx = SFX.ctx;
+    this.salida = ctx.createGain();
+    this.salida.gain.value = 0.55;
+    this.salida.connect(SFX.master);
+    if (!this.ruido) {
+      this.ruido = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+      const d = this.ruido.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    this.sonando = true;
+    this.paso = 0;
+    this.siguiente = ctx.currentTime + 0.1;
+    this.reloj = setInterval(() => this.programar(), 50);
+  },
+
+  parar() {
+    if (!this.sonando) return;
+    this.sonando = false;
+    clearInterval(this.reloj);
+    const salida = this.salida, t = SFX.ctx.currentTime;
+    salida.gain.setValueAtTime(salida.gain.value, t);
+    salida.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+    setTimeout(() => salida.disconnect(), 500);
+  },
+
+  programar() {
+    if (SFX.ctx.state !== "running") return;
+    while (this.siguiente < SFX.ctx.currentTime + 0.3) {
+      this.compas(this.paso, this.siguiente);
+      this.siguiente += this.CORCHEA;
+      this.paso += 1;
+    }
+  },
+
+  nota(midi, t, dur, tipo, vol, hasta) {
+    const ctx = SFX.ctx, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = tipo;
+    o.frequency.setValueAtTime(440 * Math.pow(2, (midi - 69) / 12), t);
+    if (hasta) o.frequency.exponentialRampToValueAtTime(hasta, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.salida);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+
+  compas(paso, t) {
+    const i = paso % 8, acorde = this.ACORDES[Math.floor(paso / 8) % 4];
+    const nota = [...acorde, acorde[0] + 12][this.ARPEGIO[i]];
+    this.nota(nota + 12, t, this.CORCHEA * 0.9, "square", 0.035);              // arpegio
+    if (i % 2 === 0) this.nota(acorde[0] - 24, t, this.CORCHEA * 1.8, "triangle", 0.16); // bajo
+    if (i === 0 || i === 4) this.nota(40, t, 0.16, "sine", 0.28, 45);                    // bombo
+    if (i % 2 === 1) {                                                                     // platillo
+      const ctx = SFX.ctx, r = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+      r.buffer = this.ruido; f.type = "highpass"; f.frequency.value = 7000;
+      g.gain.setValueAtTime(0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+      r.connect(f); f.connect(g); g.connect(this.salida); r.start(t);
+    }
+    // La melodía entra en la segunda vuelta de los acordes.
+    const m = this.MELODIA[paso % 64 - 32];
+    if (paso % 64 >= 32 && m) this.nota(m, t, this.CORCHEA * 1.6, "square", 0.05);
+  },
+
+  alternar() {
+    this.activa = !this.activa;
+    lsSet("kyra_musica", this.activa);
+    if (this.activa) this.empezar(); else this.parar();
+    renderMusica();
+  },
+};
+
+function renderMusica() {
+  el.btnJMusica.textContent = "[MÚSICA: " + (Musica.activa ? "ON" : "OFF") + "]";
 }
 
 async function abrirMenuNiveles() {
@@ -1428,6 +1593,7 @@ function mostrarModoJuego(activo) {
   el.panelSalida.classList.toggle("hidden", activo);
   el.hud.classList.toggle("hidden", activo);
   if (activo) aplicarVista();
+  if (activo) Musica.empezar(); else Musica.parar();
 }
 
 function salirDelJuego() {
@@ -1444,7 +1610,10 @@ function salirDelJuego() {
 
 function cargarNivel(i) {
   J.indice = i;
-  if (window.Huerto3D) window.Huerto3D.ambiente(i);
+  if (window.Huerto3D) {
+    window.Huerto3D.ambiente(i);
+    window.Huerto3D.presentar(); // la cámara da una vuelta al entrar al nivel
+  }
   const nivel = nivelActual();
   el.editor.value = lsGet(claveCodigo(nivel), nivel.codigoInicial);
   el.editor.scrollTop = 0;
@@ -1524,6 +1693,8 @@ function aplicarVista() {
   el.jEscena.classList.toggle("hidden", !en3D);
   el.btnJVista.classList.toggle("hidden", !vista3D.lista);
   el.btnJVista.textContent = "[VISTA: " + (J.vista3d ? "3D" : "2D") + "]";
+  el.btnJCamara.classList.toggle("hidden", !en3D);
+  el.btnJCamara.textContent = "[CÁMARA: " + (J.seguir ? "SIGUE" : "FIJA") + "]";
   if (!en3D || !J.activo) return;
   if (!vista3D.montada) {
     vista3D.montada = true;
@@ -1535,6 +1706,13 @@ function aplicarVista() {
   }
 }
 
+function cambiarCamara() {
+  if (!vista3D.montada) return;
+  J.seguir = window.Huerto3D.cambiarSeguir(!J.seguir);
+  SFX.block();
+  aplicarVista();
+}
+
 function cambiarVista() {
   J.vista3d = !J.vista3d;
   lsSet("kyra_juego_3d", J.vista3d);
@@ -1544,7 +1722,39 @@ function cambiarVista() {
 
 window.addEventListener("huerto3d-listo", () => { vista3D.lista = true; aplicarVista(); });
 
+/* Un clic en el número de una línea muestra cómo la leyó el intérprete: sus
+   tokens (lexer) y el árbol de la sentencia que la contiene (parser). */
+function inspeccionarLinea(n) {
+  const r = J.respuesta;
+  if (!r) {
+    escribirJuego([{ t: "Ejecute el programa y después haga clic en un número de línea para ver sus tokens y su AST.", c: "dim" }]);
+    return;
+  }
+  const tokens = r.tokens.filter(t => t.linea === n);
+  const arbol = r.arboles.filter(a => a.desde <= n).pop();
+  const lineas = [{ t: "LÍNEA " + n + " · EL LEXER LA PARTE EN " + tokens.length + " TOKENS:", c: "kyra" }];
+  lineas.push({ t: tokens.length ? tokens.map(t => t.tipo === t.literal ? t.tipo : t.tipo + "(" + t.literal + ")").join("  ") : "(sin tokens: vacía o comentario)", c: "val" });
+  if (arbol) {
+    lineas.push({ t: "EL PARSER ARMA ESTE ÁRBOL (SENTENCIA DE LA LÍNEA " + arbol.desde + "):", c: "kyra" });
+    arbol.arbol.replace(/\n$/, "").split("\n").forEach(t => lineas.push({ t, c: "ast" }));
+  } else if (r.etapa === "lexico" || r.etapa === "sintaxis") {
+    lineas.push({ t: "EL PARSER NO PUDO ARMAR EL ÁRBOL: EL PROGRAMA TIENE ERRORES.", c: "err" });
+  }
+  escribirJuego(lineas);
+  el.jOut.classList.add("inspeccion");
+  SFX.block();
+}
+
+el.gutter.addEventListener("click", e => {
+  if (!J.activo) return;
+  const estilo = getComputedStyle(el.gutter);
+  const caja = el.gutter.getBoundingClientRect();
+  const n = Math.floor((e.clientY - caja.top - parseFloat(estilo.paddingTop) + el.gutter.scrollTop) / parseFloat(estilo.lineHeight)) + 1;
+  if (n >= 1 && n <= el.editor.value.split("\n").length) inspeccionarLinea(n);
+});
+
 function escribirJuego(lineas) {
+  el.jOut.classList.remove("inspeccion");
   el.jOut.textContent = "";
   lineas.forEach(l => {
     const div = document.createElement("div");
@@ -1573,8 +1783,35 @@ function detenerPartida() {
   J.pausado = false; J.terminado = false;
 }
 
+/* --- Las etapas del intérprete: se encienden en orden, como las recorre el
+       programa (lexer → parser → evaluador), y marcan dónde falló. --- */
+function etapa(id, estado, texto) {
+  const e = $(id);
+  e.className = estado || "";
+  e.textContent = texto;
+}
+
+function reiniciarEtapas() {
+  etapa("etLexer", "", "LEXER");
+  etapa("etParser", "", "PARSER");
+  etapa("etEval", "", "EVALUADOR");
+}
+
+async function mostrarEtapas(r) {
+  if (r.etapa === "lexico") { etapa("etLexer", "mal", "LEXER ✗"); return; }
+  etapa("etLexer", "ok", "LEXER ✓ " + r.tokens.length + " TOKENS");
+  SFX.block();
+  await sleep(230);
+  if (r.etapa === "sintaxis") { etapa("etParser", "mal", "PARSER ✗"); return; }
+  etapa("etParser", "ok", "PARSER ✓ AST");
+  SFX.block();
+  await sleep(230);
+  etapa("etEval", "run", "EVALUADOR ▶");
+}
+
 function reiniciarNivel() {
   detenerPartida();
+  reiniciarEtapas();
   const nivel = nivelActual();
   const tablero = nivel.tableros[0];
   lineaConError = null;
@@ -1598,6 +1835,7 @@ async function ejecutarNivel(pausado) {
   J.enCurso = pedido;
   renderControles();
   setStatus("KYRA ESTÁ LEYENDO EL PROGRAMA...", "busy");
+  etapa("etLexer", "run", "LEXER ▶");
   SFX.confirm();
   try {
     const r = await fetch("/api/ejecutar", {
@@ -1609,6 +1847,8 @@ async function ejecutarNivel(pausado) {
     if (!r.ok) throw new Error(await r.text());
     const respuesta = await r.json();
     if (J.enCurso !== pedido) return;     // se reinició mientras se esperaba
+    await mostrarEtapas(respuesta);
+    if (J.enCurso !== pedido) return;
     J.enCurso = null;
     J.respuesta = respuesta;
     J.eventos = respuesta.juego ? respuesta.juego.eventos : [];
@@ -1641,6 +1881,7 @@ function avanzar() {
     const comando = foto.comando || "";
     if (comando.startsWith("cosechar")) SFX.pop();
     else if (comando.startsWith("reportar")) SFX.bark();
+    else if (foto.dice !== undefined) SFX.hablar();
     else SFX.key();
   }
 }
@@ -1678,6 +1919,7 @@ function terminarPartida() {
     const [frase, cara] = KYRA[r.etapa] || KYRA.ejecucion;
     lineas.push({ t: frase, c: "kyra" }, { t: cara, c: "kyra" });
     r.errores.forEach(t => lineas.push({ t, c: "err" }));
+    if (r.etapa === "ejecucion") etapa("etEval", "mal", "EVALUADOR ✗");
     setStatus(r.errores.length + " ERROR(ES) · ETAPA: " + nombreEtapa(r.etapa), "err");
     errorFx();
   } else if (juego.gano) {
@@ -1696,10 +1938,11 @@ function terminarPartida() {
     setStatus("LA META NO SE CUMPLIÓ");
     SFX.deny();
   }
+  if (r.errores.length === 0) etapa("etEval", "ok", "EVALUADOR ✓ " + juego.pasos + " PASOS");
   escribirJuego(lineas);
   const linea = el.jOut.querySelector(".estrellas");
   if (linea && juego.gano) mostrarEstrellas(linea, juego.estrellas, " · " + juego.pasos + " PASOS · " + juego.lineas + " LÍNEAS");
-  if (usar3D() && vista3D.montada) window.Huerto3D.final(r.errores.length > 0 ? "error" : juego.gano ? "gano" : "falta");
+  if (usar3D() && vista3D.montada) window.Huerto3D.final(r.errores.length > 0 ? (r.etapa || "ejecucion") : juego.gano ? "gano" : "falta");
   if (J.eventos.length > 0) dibujarDatos(J.eventos[J.i]);
   renderControles();
 }
@@ -1738,7 +1981,7 @@ function mostrarPista() {
   el.jOut.scrollTop = el.jOut.scrollHeight;
 }
 
-el.btnJuego.addEventListener("click", abrirMenuNiveles);
+el.btnJuego.addEventListener("click", abrirTitulo);
 el.btnJRun.addEventListener("click", () => ejecutarNivel(false));
 el.btnJPausa.addEventListener("click", alternarPausa);
 el.btnJPaso.addEventListener("click", pasoAPaso);
@@ -1749,6 +1992,9 @@ el.btnJPista.addEventListener("click", mostrarPista);
 el.btnJNiveles.addEventListener("click", abrirMenuNiveles);
 el.btnJSalir.addEventListener("click", salirDelJuego);
 el.btnJVista.addEventListener("click", cambiarVista);
+el.btnJCamara.addEventListener("click", cambiarCamara);
+el.btnJMusica.addEventListener("click", () => Musica.alternar());
+renderMusica();
 
 /* ============================================================================
  * 10. ARRANQUE

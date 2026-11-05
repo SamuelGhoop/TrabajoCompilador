@@ -122,6 +122,15 @@ El botón **[JUEGO]** de la interfaz web abre un juego para aprender el lenguaje
 
 **Vista 3D.** El huerto se ve en 3D (three.js) y **[VISTA: 3D/2D]** cambia al tablero de emojis. Kyra camina, choca, planta, cosecha, mira, espera, ladra al reportar, celebra al ganar y se pone triste al perder; los cultivos aparecen, crecen y suben al cosecharlos. Al cosechar sale un "+1" con hojas, al chocar saltan chispas y tiembla la cámara, y al ganar cae confeti y las estrellas se encienden una por una. Una barra de luz marca en el editor la línea que Kyra está ejecutando y destella con cada comando, al mismo tiempo que las luces de Kyra. Cada nivel tiene su luz, del amanecer (nivel 1) a la noche (modo libre). La cámara se ajusta sola a cada tablero: arrastrar gira, la rueda acerca y doble clic vuelve a centrar. Los modelos y sus 10 animaciones se hicieron en Blender (`web/3d/modelos/huerto.blend`) y se exportan a `huerto.glb`. El visor no conoce las reglas: compara cada foto con la anterior para saber qué animar. Si el navegador no tiene WebGL, el juego sigue en 2D, y si falta el `.glb`, usa figuras simples con las mismas animaciones. three.js se instala con `npm install` y lo sirve el mismo servidor, así que funciona sin internet.
 
+**Para la presentación.**
+- **Pantalla de título:** [JUEGO] abre "EL HUERTO DE KYRA" con Kyra girando sobre su bandeja; `Enter` abre los niveles y `Esc` vuelve a la terminal.
+- **Las etapas del intérprete:** el título del panel muestra `LEXER → PARSER → EVALUADOR`. Al ejecutar se encienden en orden (con la cantidad de tokens y de pasos) y la etapa que falla queda en rojo.
+- **Tokens y AST de una línea:** después de ejecutar, un clic en el número de una línea muestra sus tokens y el árbol de la sentencia que la contiene.
+- **Cada error, una reacción:** con un error léxico Kyra ladea la cabeza con un "?"; con uno de sintaxis se congela con las luces en rojo; con uno de ejecución se pone triste (y si chocó, saltan chispas).
+- **Kyra habla:** lo que escribe `print` (o `diga` en parce) sale en un globo sobre Kyra, en el momento en que se ejecuta.
+- **Cámara:** al entrar a un nivel da una vuelta alrededor del huerto; **[CÁMARA: SIGUE]** la pone detrás de Kyra.
+- **Música:** un bucle chiptune hecho con osciladores, que se apaga con **[MÚSICA]** o con el botón de sonido.
+
 **Controles.** Ejecutar, pausar, avanzar paso a paso, reiniciar, cambiar la velocidad, cambiar la vista, ver una pista y volver al menú de niveles. Mientras Kyra se mueve, se resalta la línea del comando que está haciendo. El código de cada nivel se guarda en el navegador (`localStorage`); las estrellas vuelven a cero cada vez que se abre la página, para poder mostrar el juego desde el principio.
 
 **Ciclos infinitos.** Cada nivel tiene un tope de pasos (la batería de Kyra). Un ciclo que no llama comandos no gasta pasos: lo frena un tiempo límite de 10 s, y `Esc` lo cancela antes.
