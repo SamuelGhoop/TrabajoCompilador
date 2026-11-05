@@ -39,7 +39,7 @@ test("TestLosComandosDelJuegoSoloExistenAlJugar", () => {
   const juego = atender({ codigo: 'mover("este");\nprint("hola");', traza: false, nivel: "secuencia" });
   assert.deepEqual(juego.errores, []);
   assert.equal(juego.salida, "hola\n");
-  assert.equal(juego.juego?.eventos.length, 2);
+  assert.equal(juego.juego?.eventos.length, 3); // la foto inicial, mover y print
   assert.equal(juego.juego?.gano, false);
   // Sigue dando tokens y AST, como cualquier programa.
   assert.ok(juego.arbol?.startsWith("Program\n"));
@@ -65,4 +65,16 @@ test("TestAtenderConTraza", () => {
     "   └─ f(0) → 0",
     "3 llamadas · profundidad máxima 3",
   ]);
+});
+
+test("TestAtenderDaElArbolDeCadaSentencia", () => {
+	const r = atender({ codigo: "let a = 1;\n\nprint(a +\n  2);\n", traza: false });
+	assert.deepEqual(r.arboles.map((a) => a.desde), [1, 3]);
+	assert.match(r.arboles[0].arbol, /^LetStatement/);
+	assert.match(r.arboles[1].arbol, /InfixExpression/);
+});
+
+test("TestAtenderSinArbolesSiHayErroresDeSintaxis", () => {
+	const r = atender({ codigo: "let = ;", traza: false });
+	assert.deepEqual(r.arboles, []);
 });

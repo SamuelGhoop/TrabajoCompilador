@@ -34,6 +34,7 @@ export interface Respuesta {
 	tokens: { tipo: string; literal: string; linea: number; columna: number }[];
 	programa: string | null;   // el programa reconstruido (null si hay errores)
 	arbol: string | null;      // el AST dibujado (null si hay errores)
+	arboles: { desde: number; arbol: string }[]; // el AST de cada sentencia y la línea donde empieza
 	salida: string;            // lo que escribió print
 	valor: string | null;      // el valor final, si no es null
 	errores: string[];         // los errores, ya con el extracto del código
@@ -91,6 +92,9 @@ export function atender(pedido: Pedido): Respuesta {
 		tokens,
 		programa: sinErrores ? program.toString() : null,
 		arbol: sinErrores ? arbolComoTexto(program) : null,
+		arboles: sinErrores
+			? program.statements.map((s) => ({ desde: (s as unknown as { token: token.Token }).token.line, arbol: arbolComoTexto(s) }))
+			: [],
 		salida,
 		valor: mostrarValor(resultado.valor),
 		errores: resultado.errores,

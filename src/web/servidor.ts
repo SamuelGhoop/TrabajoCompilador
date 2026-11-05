@@ -46,7 +46,7 @@ function ejecutarEnHilo(pedido: Pedido, cancelar: AbortSignal): Promise<Respuest
 			}
 		};
 		const fallo = (mensaje: string): Respuesta => ({
-			tokens: [], programa: null, arbol: null, salida: "", valor: null,
+			tokens: [], programa: null, arbol: null, arboles: [], salida: "", valor: null,
 			errores: [mensaje], etapa: "ejecucion", traza: null, juego: null,
 		});
 
