@@ -37,6 +37,21 @@ export class Environment {
 		return this.store.get(name) ?? this.outer?.get(name);
 	}
 
+	// visibles devuelve las variables que se ven desde aquí, de la más
+	// cercana a la más lejana. Si una variable tapa (shadowing) a otra con el
+	// mismo nombre de un entorno exterior, solo aparece la de adentro.
+	visibles(): Map<string, Obj> {
+		const vistas = new Map<string, Obj>();
+		for (let env: Environment | null = this; env !== null; env = env.outer) {
+			for (const [nombre, valor] of env.store) {
+				if (!vistas.has(nombre)) {
+					vistas.set(nombre, valor);
+				}
+			}
+		}
+		return vistas;
+	}
+
 	// set DECLARA una variable en ESTE entorno (es lo que hace let).
 	// Si ya existía aquí, la reemplaza.
 	set(name: string, value: Obj): Obj {

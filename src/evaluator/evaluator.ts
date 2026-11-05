@@ -80,9 +80,17 @@ export function evaluar(node: ast.Node | null, env: Environment): object.Obj {
 export interface ObservadorDeLlamadas {
 	entrar(nombre: string, args: object.Obj[]): void;
 	salir(resultado: object.Obj): void;
-	// integrada avisa la línea desde donde se llama una función incluida. La
-	// usa el juego para resaltar la línea de cada comando de Kyra.
-	integrada?(linea: number): void;
+	// integrada avisa la línea desde donde se llama una función incluida, y
+	// el entorno de esa llamada. La usa el juego para resaltar la línea de
+	// cada comando de Kyra y mostrar cuánto valen las variables.
+	integrada?(linea: number, env: Environment): void;
+	// entrarCiclo, vuelta y salirCiclo avisan cuándo empieza un for o un
+	// while (con su línea), cada vuelta (1, 2, 3, ...) y cuándo termina. Los
+	// ciclos siempre terminan en orden inverso al que empezaron, así que el
+	// observador puede llevarlos en una pila.
+	entrarCiclo?(linea: number): void;
+	vuelta?(n: number): void;
+	salirCiclo?(): void;
 }
 
 let observador: ObservadorDeLlamadas | null = null;
@@ -206,8 +214,8 @@ registrar(ast.AssignExpression, (node, env) => evaluarAsignacion(node, env));
 
 // --- Control de flujo ---
 registrar(ast.IfExpression, (node, env) => evaluarIf(node, env));
-registrar(ast.WhileExpression, (node, env) => evaluarWhile(node, env));
-registrar(ast.ForExpression, (node, env) => evaluarFor(node, env));
+registrar(ast.WhileExpression, (node, env) => observarCiclo(node.token.line, () => evaluarWhile(node, env)));
+registrar(ast.ForExpression, (node, env) => observarCiclo(node.token.line, () => evaluarFor(node, env)));
 
 // --- Llamadas e índices ---
 registrar(ast.CallExpression, (node, env) => {
@@ -228,7 +236,7 @@ registrar(ast.CallExpression, (node, env) => {
 		return result;
 	}
 	if (observador !== null && func instanceof object.Builtin) {
-		observador.integrada?.(node.token.line);
+		observador.integrada?.(node.token.line, env);
 	}
 	return aplicarFuncion(func, args, env);
 });
@@ -596,9 +604,24 @@ function evaluarIf(node: ast.IfExpression, env: Environment): object.Obj {
 // evaluarWhile repite el cuerpo mientras la condición sea verdadera.
 // El valor del ciclo es el de la última vuelta (null si no dio ninguna).
 // Un return o un error dentro del cuerpo detienen el ciclo y suben.
+// observarCiclo avisa al observador (si hay) que empieza un ciclo y, al
+// terminar de cualquier forma (aunque falle), que terminó.
+function observarCiclo(linea: number, ciclo: () => object.Obj): object.Obj {
+	if (observador === null) {
+		return ciclo();
+	}
+	const obs = observador;
+	obs.entrarCiclo?.(linea);
+	try {
+		return ciclo();
+	} finally {
+		obs.salirCiclo?.();
+	}
+}
+
 function evaluarWhile(node: ast.WhileExpression, env: Environment): object.Obj {
 	let result: object.Obj = NULL;
-	for (;;) {
+	for (let n = 1; ; n++) {
 		const condition = evaluar(node.condition, env);
 		if (esError(condition)) {
 			return condition;
@@ -607,6 +630,7 @@ function evaluarWhile(node: ast.WhileExpression, env: Environment): object.Obj {
 			return result;
 		}
 
+		observador?.vuelta?.(n);
 		result = evaluar(node.body, env);
 		if (detieneEjecucion(result)) {
 			return result;
@@ -632,7 +656,7 @@ function evaluarFor(node: ast.ForExpression, env: Environment): object.Obj {
 	}
 
 	let result: object.Obj = NULL;
-	for (;;) {
+	for (let n = 1; ; n++) {
 		if (node.condition !== null) {
 			const condition = evaluar(node.condition, env);
 			if (esError(condition)) {
@@ -643,6 +667,7 @@ function evaluarFor(node: ast.ForExpression, env: Environment): object.Obj {
 			}
 		}
 
+		observador?.vuelta?.(n);
 		result = evaluar(node.body, env);
 		if (detieneEjecucion(result)) {
 			return result;
