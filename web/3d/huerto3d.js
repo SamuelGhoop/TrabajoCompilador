@@ -265,7 +265,9 @@ function montar(elemento) {
 	});
 	renderer.domElement.addEventListener("dblclick", () => reencuadrar());
 
-	escena.add(new THREE.HemisphereLight(0xe0fff0, 0x1a2a20, 2.2));
+	const cielo = new THREE.HemisphereLight(0xe0fff0, 0x1a2a20, 2.2);
+	escena.add(cielo);
+	escena.userData.cielo = cielo;
 	const sol = new THREE.DirectionalLight(0xfff2dd, 3.2);
 	sol.position.set(4, 9, 6);
 	sol.castShadow = true;
@@ -288,6 +290,7 @@ function montar(elemento) {
 	new ResizeObserver(redimensionar).observe(contenedor);
 	redimensionar();
 	renderer.setAnimationLoop(cuadro);
+	ambiente(ambienteActual ? AMBIENTES.indexOf(ambienteActual) : 1);
 	return cargarModelos().then(() => { cargado = true; });
 }
 
@@ -345,6 +348,7 @@ function construirTablero(foto) {
 	const otroTamano = !tablero || tablero.filas !== filas || tablero.columnas !== columnas;
 	if (tablero) escena.remove(tablero.grupo);
 	tablero = { filas, columnas, variante: foto.variante, casillas: new Map(), grupo: new THREE.Group() };
+	lamparas.length = 0;
 	escena.add(tablero.grupo);
 
 	for (let f = 0; f < filas; f++) {
@@ -365,7 +369,14 @@ function construirTablero(foto) {
 			if (f >= 0 && f < filas && c >= 0 && c < columnas) continue;
 			if ((f + c) % 2 !== 0) continue;
 			const poste = nuevo("Poste");
-			poste.traverse((o) => { o.castShadow = false; });
+			const fase = (f + c) * 0.6;
+			poste.traverse((o) => {
+				o.castShadow = false;
+				if (o.isMesh && esLuz(o.material)) {
+					o.material = o.material.clone();
+					lamparas.push({ material: o.material, base: o.material.emissiveIntensity, fase });
+				}
+			});
 			poste.position.copy(lugar(f, c));
 			tablero.grupo.add(poste);
 		}
@@ -422,7 +433,13 @@ function crearKyra() {
 		const p = modelo.getObjectByName(nombre);
 		if (p) partes[nombre] = { obj: p, rot: p.rotation.clone(), pos: p.position.clone() };
 	}
-	kyra = { raiz, modelo, partes, mixer: null, acciones: {}, actual: null, giro: 0 };
+	kyra = { raiz, modelo, partes, mixer: null, acciones: {}, actual: null, giro: 0, luces: [], destello: 0 };
+	modelo.traverse((o) => {
+		if (o.isMesh && esLuz(o.material)) {
+			o.material = o.material.clone();
+			kyra.luces.push({ material: o.material, base: o.material.emissiveIntensity });
+		}
+	});
 	if (modelos.clips.length > 0) {
 		kyra.mixer = new THREE.AnimationMixer(modelo);
 		for (const clip of modelos.clips) kyra.acciones[clip.name] = kyra.mixer.clipAction(clip);
@@ -524,16 +541,168 @@ function accion(nombre, ms, final) {
 	animar1(ms, (k) => { restaurarPartes(); fn(k); }, () => { if (!final) restaurarPartes(); });
 }
 
-/* -------------------------------------------------------------- TWEENS */
+/* ------------------------------------------------------------ EFECTOS */
+// Partículas, textos flotantes, confeti, sacudida de cámara y luces. Todo es
+// decoración: no cambia lo que pasa en el juego.
 
-function animar1(ms, fn, alTerminar) {
-	tweens.push({ inicio: performance.now(), ms: Math.max(1, ms), fn, alTerminar });
+const esLuz = (m) => m && m.emissive && m.emissiveIntensity > 0 && m.emissive.getHex() !== 0;
+const lamparas = [];   // { material, base, fase }
+const particulas = []; // { obj, vel, giro, vida, total, gravedad, tam }
+const MAX_PARTICULAS = 500;
+let sacudida = 0;      // segundos que le quedan a la sacudida
+let ambienteActual = null;
+const geoParticula = new THREE.BoxGeometry(1, 1, 1);
+const geoConfeti = new THREE.PlaneGeometry(1, 0.6);
+
+function particula(material, geo, tam, pos, vel, vida, gravedad = 9) {
+	if (particulas.length >= MAX_PARTICULAS) {
+		material.dispose();
+		return;
+	}
+	const obj = new THREE.Mesh(geo, material);
+	obj.scale.setScalar(tam);
+	obj.position.copy(pos);
+	obj.rotation.set(Math.random() * 6, Math.random() * 6, 0);
+	escena.add(obj);
+	const giro = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(12);
+	particulas.push({ obj, vel, giro, vida, total: vida, gravedad, tam });
 }
 
+// estallido lanza n partículas desde pos, hacia arriba y a los lados.
+function estallido(pos, colores, n, fuerza = 2.2, tam = 0.06, vida = 0.8, brillo = false) {
+	for (let i = 0; i < n; i++) {
+		const color = colores[i % colores.length];
+		const mat = brillo
+			? new THREE.MeshBasicMaterial({ color })
+			: new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
+		const a = Math.random() * Math.PI * 2;
+		const vel = new THREE.Vector3(Math.cos(a), 1.2 + Math.random(), Math.sin(a)).multiplyScalar(fuerza * (0.5 + Math.random() * 0.5));
+		particula(mat, geoParticula, tam * (0.6 + Math.random() * 0.8), pos, vel, vida * (0.7 + Math.random() * 0.6));
+	}
+}
+
+// confeti cae sobre todo el tablero al ganar.
+function confeti() {
+	const colores = [0x3cff7a, 0xffd23c, 0xff5a5a, 0x5ac8ff, 0xff8a3c, 0xffffff];
+	for (let i = 0; i < 160; i++) {
+		const mat = new THREE.MeshBasicMaterial({ color: colores[i % colores.length], side: THREE.DoubleSide });
+		const pos = new THREE.Vector3((Math.random() - 0.5) * (tablero.columnas + 1), 3 + Math.random() * 3, (Math.random() - 0.5) * (tablero.filas + 1));
+		const vel = new THREE.Vector3((Math.random() - 0.5) * 0.6, -0.4 - Math.random() * 0.6, (Math.random() - 0.5) * 0.6);
+		particula(mat, geoConfeti, 0.09, pos, vel, 3.2 + Math.random() * 1.5, 0.15);
+	}
+}
+
+// textoFlotante muestra un letrero (como "+1 🥬") que sube y se desvanece.
+function textoFlotante(texto, pos, color = "#3cff7a") {
+	const lienzo = document.createElement("canvas");
+	lienzo.width = 256;
+	lienzo.height = 128;
+	const g = lienzo.getContext("2d");
+	g.font = "bold 72px 'Share Tech Mono', monospace";
+	g.textAlign = "center";
+	g.textBaseline = "middle";
+	g.shadowColor = color;
+	g.shadowBlur = 18;
+	g.fillStyle = color;
+	g.fillText(texto, 128, 64);
+	const mat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lienzo), transparent: true, depthTest: false });
+	const sprite = new THREE.Sprite(mat);
+	sprite.scale.set(1.4, 0.7, 1);
+	sprite.position.copy(pos);
+	sprite.renderOrder = 10;
+	escena.add(sprite);
+	const desde = pos.y;
+	animar1(1100, (k) => {
+		sprite.position.y = desde + facil.salida(k) * 0.9;
+		mat.opacity = k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4;
+	}, () => {
+		escena.remove(sprite);
+		mat.map.dispose();
+		mat.dispose();
+	}, true);
+}
+
+function actualizarEfectos(dt, t) {
+	for (let i = particulas.length - 1; i >= 0; i--) {
+		const p = particulas[i];
+		p.vida -= dt;
+		if (p.vida <= 0) {
+			escena.remove(p.obj);
+			p.obj.material.dispose();
+			particulas.splice(i, 1);
+			continue;
+		}
+		p.vel.y -= p.gravedad * dt;
+		p.obj.position.addScaledVector(p.vel, dt);
+		if (p.gravedad < 1) {
+			p.obj.position.x += Math.sin(t * 3 + i) * dt * 0.3; // el confeti se mece
+		} else if (p.obj.position.y < 0.02) {
+			p.obj.position.y = 0.02; // rebota en el piso
+			p.vel.multiplyScalar(0.4);
+			p.vel.y = Math.abs(p.vel.y);
+		}
+		p.obj.rotation.x += p.giro.x * dt;
+		p.obj.rotation.y += p.giro.y * dt;
+		p.obj.scale.setScalar(p.tam * Math.min(1, p.vida / (p.total * 0.3)));
+	}
+	const brillo = ambienteActual ? ambienteActual.lamparas : 1;
+	for (const l of lamparas) {
+		l.material.emissiveIntensity = l.base * brillo * (0.65 + 0.35 * Math.sin(t * 2.2 + l.fase));
+	}
+	if (kyra) {
+		kyra.destello = Math.max(0, kyra.destello - dt * 3.5);
+		for (const l of kyra.luces) l.material.emissiveIntensity = l.base * (1 + 3 * kyra.destello);
+	}
+}
+
+// AMBIENTES: la luz cambia con cada nivel, del amanecer a la noche.
+const AMBIENTES = [
+	{ cielo: 0xffd9b0, suelo: 0x20302a, fuerza: 1.8, sol: 0xffb070, luz: 2.6, pos: [-6, 4, 5], fondo: 0x0f1612, lamparas: 1.2 },  // amanecer
+	{ cielo: 0xe0fff0, suelo: 0x1a2a20, fuerza: 2.2, sol: 0xfff2dd, luz: 3.2, pos: [4, 9, 6], fondo: 0x0a120d, lamparas: 1 },     // mañana
+	{ cielo: 0xffffff, suelo: 0x223326, fuerza: 2.6, sol: 0xffffff, luz: 3.6, pos: [1, 12, 2], fondo: 0x0c1611, lamparas: 0.8 },  // mediodía
+	{ cielo: 0xfff0d0, suelo: 0x1a2a20, fuerza: 2.0, sol: 0xffd29a, luz: 3.0, pos: [6, 6, -2], fondo: 0x0d120c, lamparas: 1.1 },  // tarde
+	{ cielo: 0xff9e7a, suelo: 0x2a1a18, fuerza: 1.5, sol: 0xff7a40, luz: 2.6, pos: [7, 3, -3], fondo: 0x150d0a, lamparas: 1.6 },  // atardecer
+	{ cielo: 0x5070b0, suelo: 0x0a0f18, fuerza: 0.9, sol: 0x9fb8ff, luz: 0.9, pos: [-3, 8, -4], fondo: 0x03060b, lamparas: 3.2 }, // noche
+];
+
+// ambiente pone la luz del nivel (0 = el primero).
+function ambiente(indice) {
+	ambienteActual = AMBIENTES[Math.max(0, Math.min(AMBIENTES.length - 1, indice))];
+	if (!escena) return;
+	const a = ambienteActual;
+	const { cielo, sol } = escena.userData;
+	cielo.color.setHex(a.cielo);
+	cielo.groundColor.setHex(a.suelo);
+	cielo.intensity = a.fuerza;
+	sol.color.setHex(a.sol);
+	sol.intensity = a.luz;
+	sol.position.set(...a.pos);
+	escena.background.setHex(a.fondo);
+	escena.fog.color.setHex(a.fondo);
+}
+
+function sacudir(segundos = 0.35) {
+	sacudida = Math.max(sacudida, segundos);
+}
+
+/* -------------------------------------------------------------- TWEENS */
+
+// decorativo: la animación sigue su curso aunque llegue el siguiente
+// comando (los letreros "+1", el cultivo que sube al cosecharlo).
+function animar1(ms, fn, alTerminar, decorativo = false) {
+	tweens.push({ inicio: performance.now(), ms: Math.max(1, ms), fn, alTerminar, decorativo });
+}
+
+// terminarTweens salta al final de las animaciones de Kyra y del tablero,
+// para que el siguiente comando empiece desde un estado limpio.
 function terminarTweens() {
 	const pendientes = tweens;
 	tweens = [];
 	for (const t of pendientes) {
+		if (t.decorativo) {
+			tweens.push(t);
+			continue;
+		}
 		t.fn(1);
 		t.alTerminar?.();
 	}
@@ -552,10 +721,21 @@ function cuadro() {
 	}
 	tweens = vivos.concat(tweens); // más los que se crearon al terminar otros
 	reloj.update();
-	const dt = reloj.getDelta();
+	const dt = Math.min(0.1, reloj.getDelta());
 	if (kyra?.mixer) kyra.mixer.update(dt);
+	actualizarEfectos(dt, reloj.getElapsed());
 	controles.update();
-	renderer.render(escena, camara);
+	if (sacudida > 0) {
+		// La cámara se corre solo en este cuadro y después vuelve a su lugar.
+		sacudida = Math.max(0, sacudida - dt);
+		const fuerza = 0.12 * (sacudida / 0.35);
+		const antes = camara.position.clone();
+		camara.position.add(new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(fuerza));
+		renderer.render(escena, camara);
+		camara.position.copy(antes);
+	} else {
+		renderer.render(escena, camara);
+	}
 }
 
 /* ------------------------------------------------------------- DIBUJAR */
@@ -563,6 +743,8 @@ function cuadro() {
 // dibujar muestra una foto. Con la anterior, anima el cambio en ms.
 function dibujar(foto, anterior, ms) {
 	if (!cargado) return;
+	clearTimeout(finalPendiente); // una partida nueva cancela el final de la anterior
+	finalPendiente = null;
 	terminarTweens();
 	const nuevaPartida = !anterior || !tablero || anterior.variante !== foto.variante ||
 		tablero.filas !== foto.tablero.length || tablero.columnas !== foto.tablero[0].length;
@@ -580,6 +762,10 @@ function dibujar(foto, anterior, ms) {
 			if (casilla.letra === letra) return;
 			const cosechado = animar && "LT".includes(casilla.letra) && letra === ".";
 			if (cosechado && casilla.cultivo) {
+				const sitio = lugar(f, c).add(new THREE.Vector3(0, 0.45, 0));
+				const tomate = casilla.letra === "T";
+				textoFlotante(tomate ? "+1 🍅" : "+1 🥬", sitio.clone().add(new THREE.Vector3(0, 0.4, 0)), tomate ? "#ff6a50" : "#7dff8a");
+				estallido(sitio, tomate ? [COLORES.tomate, COLORES.hoja] : [COLORES.hoja, COLORES.hojaOscura, 0x9be36a], 18, 2.0, 0.07, 0.9);
 				// El cultivo sube hacia Kyra y desaparece.
 				const obj = casilla.cultivo;
 				casilla.cultivo = null;
@@ -587,7 +773,10 @@ function dibujar(foto, anterior, ms) {
 					obj.position.y = ALTURA_TIERRA + facil.salida(k) * 0.9;
 					obj.rotation.y += 0.15;
 					obj.scale.setScalar(Math.max(0.01, 1 - k * k));
-				}, () => casilla.grupo.remove(obj));
+				}, () => casilla.grupo.remove(obj), true);
+			}
+			if (animar && casilla.letra === "." && "bt".includes(letra)) {
+				estallido(lugar(f, c).add(new THREE.Vector3(0, ALTURA_TIERRA + 0.05, 0)), [COLORES.tierra, 0x7a5228], 12, 1.4, 0.05, 0.6);
 			}
 			ponerLetra(casilla, letra, animar);
 		});
@@ -601,6 +790,7 @@ function dibujar(foto, anterior, ms) {
 	const rumbo = /^mover\("(\w+)"\)/.exec(comando)?.[1];
 	const delta = RUMBOS[rumbo];
 	if (delta) kyra.giro = giroDe(delta.fila, delta.columna);
+	if (nombre) kyra.destello = 1;
 
 	if (!animar) {
 		restaurarPartes();
@@ -630,20 +820,39 @@ function dibujar(foto, anterior, ms) {
 	} else if (nombre === "mover") {
 		animar1(dur * 0.3, (k) => { kyra.raiz.rotation.y = giroDesde + (giroHasta - giroDesde) * facil.suave(k); });
 		accion("chocar", dur);
+		const golpe = destino.clone().add(new THREE.Vector3(delta ? delta.columna * 0.5 : 0, 0.4, delta ? delta.fila * 0.5 : 0));
+		animar1(dur * 0.22, () => {}, () => {
+			estallido(golpe, [0xffd23c, 0xffffff, 0xff8a3c], 26, 2.6, 0.035, 0.5, true);
+			sacudir();
+		});
 	} else if (nombre) {
 		accion(nombre, dur);
 	}
 }
 
 // final muestra cómo terminó la partida: "gano", "error" o "falta".
+// Espera a que termine lo que se esté animando (por ejemplo, la última
+// cosecha con su "+1") y después hace el final.
+let finalPendiente = null;
 function final(tipo) {
 	if (!kyra) return;
+	const ahora = performance.now();
+	const espera = tweens.reduce((m, t) => Math.max(m, t.inicio + t.ms - ahora), 0);
+	finalPendiente = setTimeout(() => hacerFinal(tipo), Math.min(espera, 1200));
+}
+
+function hacerFinal(tipo) {
+	finalPendiente = null;
 	terminarTweens();
-	if (tipo === "gano") accion("celebrar", 1400, true);
-	else accion("triste", 900, true);
+	if (tipo === "gano") {
+		accion("celebrar", 1400, true);
+		confeti();
+	} else {
+		accion("triste", 900, true);
+	}
 }
 
 // depurar sirve para revisar la escena desde la consola del navegador.
 const depurar = () => ({ THREE, escena, camara, controles, kyra, tablero });
-window.Huerto3D = { montar, dibujar, final, reencuadrar, depurar };
+window.Huerto3D = { montar, dibujar, final, reencuadrar, ambiente, depurar };
 window.dispatchEvent(new Event("huerto3d-listo"));
