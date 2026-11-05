@@ -194,6 +194,9 @@ const RESPALDO = {
 // Modelos: lo que haya en huerto.glb, y el respaldo para lo que falte.
 const modelos = { plantillas: {}, clips: [] };
 
+let cargaDeModelos = null;
+const modelosListos = () => (cargaDeModelos ??= cargarModelos());
+
 async function cargarModelos() {
 	try {
 		const gltf = await new GLTFLoader().loadAsync("/3d/modelos/huerto.glb");
@@ -259,7 +262,10 @@ function montar(elemento) {
 	// Solo cuenta como encuadre propio si la cámara de verdad se movió (un
 	// clic suelto sobre la escena no la deja fija).
 	const alEmpezar = new THREE.Vector3();
-	controles.addEventListener("start", () => alEmpezar.copy(camara.position));
+	controles.addEventListener("start", () => {
+		alEmpezar.copy(camara.position);
+		barrido = null;
+	});
 	controles.addEventListener("end", () => {
 		if (camara.position.distanceTo(alEmpezar) > 0.05) encuadreUsuario = true;
 	});
@@ -291,7 +297,7 @@ function montar(elemento) {
 	redimensionar();
 	renderer.setAnimationLoop(cuadro);
 	ambiente(ambienteActual ? AMBIENTES.indexOf(ambienteActual) : 1);
-	return cargarModelos().then(() => { cargado = true; });
+	return modelosListos().then(() => { cargado = true; });
 }
 
 function redimensionar() {
@@ -341,6 +347,61 @@ function reencuadrar() {
 	controles.update();
 }
 
+/* ------------------------------------------------------- CÁMARA DE CINE */
+// Al entrar a un nivel, la cámara da media vuelta alrededor del huerto antes
+// de quedarse en su lugar. El modo "seguir" la pone detrás de Kyra.
+
+let barrido = null;          // { inicio, ms, destino, centro }
+let barridoPendiente = false;
+let seguir = false;
+
+function presentar() {
+	barridoPendiente = true;
+}
+
+function empezarBarrido() {
+	barrido = { inicio: performance.now(), ms: 2800, destino: camara.position.clone(), centro: controles.target.clone() };
+	moverBarrido();
+}
+
+function moverBarrido() {
+	const k = Math.min(1, (performance.now() - barrido.inicio) / barrido.ms);
+	const e = facil.suave(k);
+	const desde = barrido.destino.clone().sub(barrido.centro);
+	const giro = (1 - e) * -1.9;                // empieza casi de lado
+	const lejos = 1 + (1 - e) * 0.45;           // y un poco más lejos y alto
+	desde.applyAxisAngle(new THREE.Vector3(0, 1, 0), giro).multiplyScalar(lejos);
+	desde.y += (1 - e) * 1.5;
+	camara.position.copy(barrido.centro).add(desde);
+	camara.lookAt(barrido.centro);
+	if (k >= 1) {
+		barrido = null;
+		controles.update();
+	}
+}
+
+const detrasDeKyra = new THREE.Vector3();
+const miraKyra = new THREE.Vector3();
+function seguirAKyra(dt) {
+	const giro = kyra.raiz.rotation.y;
+	const p = kyra.raiz.position;
+	detrasDeKyra.set(p.x - Math.sin(giro) * 2.3, p.y + 1.8, p.z - Math.cos(giro) * 2.3);
+	miraKyra.set(p.x + Math.sin(giro) * 0.6, p.y + 0.35, p.z + Math.cos(giro) * 0.6);
+	const suave = 1 - Math.exp(-dt * 3);
+	camara.position.lerp(detrasDeKyra, suave);
+	controles.target.lerp(miraKyra, suave);
+	camara.lookAt(controles.target);
+}
+
+// cambiarSeguir activa o apaga el modo "seguir a Kyra" y devuelve el estado.
+function cambiarSeguir(activo = !seguir) {
+	seguir = activo;
+	barrido = null;
+	controles.enabled = !seguir;
+	if (!seguir) reencuadrar();
+	return seguir;
+}
+
 /* ------------------------------------------------------------- TABLERO */
 
 function construirTablero(foto) {
@@ -388,7 +449,9 @@ function construirTablero(foto) {
 	sol.shadow.camera.updateProjectionMatrix();
 
 	if (!kyra) crearKyra();
-	if (otroTamano || !encuadreUsuario) reencuadrar();
+	if (otroTamano || !encuadreUsuario || barridoPendiente) reencuadrar();
+	if (barridoPendiente && !seguir) empezarBarrido();
+	barridoPendiente = false;
 }
 
 const ALTURA_TIERRA = 0.14;
@@ -437,7 +500,7 @@ function crearKyra() {
 	modelo.traverse((o) => {
 		if (o.isMesh && esLuz(o.material)) {
 			o.material = o.material.clone();
-			kyra.luces.push({ material: o.material, base: o.material.emissiveIntensity });
+			kyra.luces.push({ material: o.material, base: o.material.emissiveIntensity, color: o.material.emissive.clone() });
 		}
 	});
 	if (modelos.clips.length > 0) {
@@ -651,7 +714,8 @@ function actualizarEfectos(dt, t) {
 	}
 	if (kyra) {
 		kyra.destello = Math.max(0, kyra.destello - dt * 3.5);
-		for (const l of kyra.luces) l.material.emissiveIntensity = l.base * (1 + 3 * kyra.destello);
+		const falla = kyra.congelada ? (Math.sin(t * 22) > 0.2 ? 3.5 : 0.4) : 1;
+		for (const l of kyra.luces) l.material.emissiveIntensity = l.base * (1 + 3 * kyra.destello) * falla;
 	}
 }
 
@@ -683,6 +747,120 @@ function ambiente(indice) {
 
 function sacudir(segundos = 0.35) {
 	sacudida = Math.max(sacudida, segundos);
+}
+
+/* ------------------------------------------------- REACCIONES Y GLOBOS */
+// Cada etapa del intérprete tiene su reacción: un error léxico la confunde
+// (cabeza ladeada y un "?"), uno de sintaxis la deja congelada con la luz en
+// rojo, y uno de ejecución la pone triste. print sale como un globo de texto.
+
+let signo = null;  // el "?" sobre la cabeza
+let globo = null;  // el globo de lo que dijo
+const ROJO = new THREE.Color(0xff0000);
+
+function letrero(lineas, { fondo, borde, color, ancho = 512, fuente = 44 }) {
+	const alto = 36 + lineas.length * (fuente + 10);
+	const lienzo = document.createElement("canvas");
+	lienzo.width = ancho;
+	lienzo.height = alto + 26;
+	const g = lienzo.getContext("2d");
+	if (fondo) {
+		g.fillStyle = fondo;
+		g.strokeStyle = borde;
+		g.lineWidth = 6;
+		g.beginPath();
+		g.roundRect(6, 6, ancho - 12, alto - 12, 22);
+		g.moveTo(ancho / 2 - 22, alto - 7);
+		g.lineTo(ancho / 2, alto + 20);
+		g.lineTo(ancho / 2 + 22, alto - 7);
+		g.fill();
+		g.stroke();
+	}
+	g.font = `bold ${fuente}px 'Share Tech Mono', monospace`;
+	g.textAlign = "center";
+	g.textBaseline = "middle";
+	g.fillStyle = color;
+	g.shadowColor = color;
+	g.shadowBlur = 10;
+	lineas.forEach((t, i) => g.fillText(t, ancho / 2, 24 + (fuente + 10) * (i + 0.5)));
+	const mat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lienzo), transparent: true, depthTest: false });
+	const sprite = new THREE.Sprite(mat);
+	const escala = 2.3;
+	sprite.scale.set(escala, escala * lienzo.height / ancho, 1);
+	sprite.renderOrder = 11;
+	return sprite;
+}
+
+function quitar(sprite) {
+	if (!sprite) return;
+	sprite.parent?.remove(sprite);
+	sprite.material.map.dispose();
+	sprite.material.dispose();
+}
+
+// partirTexto corta el texto en renglones de hasta 20 letras (máximo 4).
+function partirTexto(texto) {
+	const renglones = [];
+	let actual = "";
+	for (const palabra of texto.split(/\s+/)) {
+		if ((actual + " " + palabra).trim().length > 20 && actual) {
+			renglones.push(actual);
+			actual = palabra;
+		} else {
+			actual = (actual + " " + palabra).trim();
+		}
+	}
+	if (actual) renglones.push(actual);
+	const cortados = renglones.slice(0, 4).map((r) => (r.length > 20 ? r.slice(0, 19) + "…" : r));
+	if (renglones.length > 4) cortados[3] = cortados[3].slice(0, 18) + "…";
+	return cortados.length > 0 ? cortados : [" "];
+}
+
+function decir(texto, ms) {
+	quitar(globo);
+	globo = letrero(partirTexto(texto), { fondo: "rgba(4,18,9,0.92)", borde: "#3cff7a", color: "#7dffa5" });
+	globo.position.set(0, 1.75, 0);
+	kyra.raiz.add(globo);
+	const este = globo;
+	const vida = Math.max(1800, ms * 3);
+	animar1(vida, (k) => {
+		este.material.opacity = k < 0.85 ? 1 : 1 - (k - 0.85) / 0.15;
+		este.position.y = 1.75 + Math.min(1, k * 8) * 0.05;
+	}, () => {
+		if (globo === este) globo = null;
+		quitar(este);
+	}, true);
+}
+
+function confundida() {
+	clip("confundida");
+	quitar(signo);
+	signo = letrero(["?"], { color: "#ffd23c", ancho: 128, fuente: 110 });
+	signo.scale.set(0.55, 0.55 * signo.material.map.image.height / 128, 1);
+	signo.position.set(0.15, 1.45, 0);
+	kyra.raiz.add(signo);
+	const este = signo;
+	animar1(60000, (k) => { este.position.y = 1.45 + Math.sin(k * 60000 / 260) * 0.06; }, null, true);
+}
+
+function congelada() {
+	if (kyra.mixer) kyra.mixer.timeScale = 0;
+	for (const l of kyra.luces) l.material.emissive.copy(ROJO);
+	kyra.congelada = true;
+	sacudir(0.2);
+}
+
+// limpiarReaccion deja a Kyra normal antes de una partida nueva.
+function limpiarReaccion() {
+	if (signo) {
+		quitar(signo);
+		signo = null;
+	}
+	if (kyra?.congelada) {
+		if (kyra.mixer) kyra.mixer.timeScale = 1;
+		for (const l of kyra.luces) l.material.emissive.copy(l.color);
+		kyra.congelada = false;
+	}
 }
 
 /* -------------------------------------------------------------- TWEENS */
@@ -724,7 +902,13 @@ function cuadro() {
 	const dt = Math.min(0.1, reloj.getDelta());
 	if (kyra?.mixer) kyra.mixer.update(dt);
 	actualizarEfectos(dt, reloj.getElapsed());
-	controles.update();
+	if (seguir && kyra) {
+		seguirAKyra(dt);
+	} else if (barrido) {
+		moverBarrido();
+	} else {
+		controles.update();
+	}
 	if (sacudida > 0) {
 		// La cámara se corre solo en este cuadro y después vuelve a su lugar.
 		sacudida = Math.max(0, sacudida - dt);
@@ -745,6 +929,7 @@ function dibujar(foto, anterior, ms) {
 	if (!cargado) return;
 	clearTimeout(finalPendiente); // una partida nueva cancela el final de la anterior
 	finalPendiente = null;
+	limpiarReaccion();
 	terminarTweens();
 	const nuevaPartida = !anterior || !tablero || anterior.variante !== foto.variante ||
 		tablero.filas !== foto.tablero.length || tablero.columnas !== foto.tablero[0].length;
@@ -825,6 +1010,9 @@ function dibujar(foto, anterior, ms) {
 			estallido(golpe, [0xffd23c, 0xffffff, 0xff8a3c], 26, 2.6, 0.035, 0.5, true);
 			sacudir();
 		});
+	} else if (foto.dice !== undefined) {
+		decir(foto.dice, ms);
+		accion("hablar", dur);
 	} else if (nombre) {
 		accion(nombre, dur);
 	}
@@ -847,12 +1035,108 @@ function hacerFinal(tipo) {
 	if (tipo === "gano") {
 		accion("celebrar", 1400, true);
 		confeti();
+	} else if (tipo === "lexico") {
+		confundida();
+	} else if (tipo === "sintaxis") {
+		congelada();
 	} else {
 		accion("triste", 900, true);
 	}
 }
 
+/* ---------------------------------------------------- PANTALLA DE TÍTULO */
+// Una escena aparte, pequeña: Kyra sobre una bandeja con lechugas, girando
+// despacio. titulo(contenedor) la dibuja y devuelve cómo cerrarla.
+
+async function titulo(elemento) {
+	await modelosListos();
+	const r = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+	r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+	r.toneMapping = THREE.ACESFilmicToneMapping;
+	r.toneMappingExposure = 1.5;
+	r.shadowMap.enabled = true;
+	elemento.append(r.domElement);
+	const e = new THREE.Scene();
+	const c = new THREE.PerspectiveCamera(32, 1, 0.1, 50);
+	c.position.set(0, 1.5, 3.6);
+	c.lookAt(0, 0.45, 0);
+	e.add(new THREE.HemisphereLight(0xe0fff0, 0x10201a, 2.4));
+	const luz = new THREE.DirectionalLight(0xffffff, 3);
+	luz.position.set(2, 5, 3);
+	luz.castShadow = true;
+	e.add(luz);
+	const contraluz = new THREE.DirectionalLight(0x3cff7a, 2.5);
+	contraluz.position.set(-3, 2, -3);
+	e.add(contraluz);
+
+	const giratorio = new THREE.Group();
+	e.add(giratorio);
+	const bandeja = nuevo("Bandeja");
+	bandeja.scale.set(1.6, 1, 1.6);
+	giratorio.add(bandeja);
+	for (const [x, z] of [[-0.5, -0.45], [0.5, -0.4], [0.55, 0.45], [-0.5, 0.5]]) {
+		const lechuga = nuevo("Lechuga");
+		lechuga.position.set(x, ALTURA_TIERRA, z);
+		lechuga.scale.setScalar(0.8);
+		giratorio.add(lechuga);
+	}
+	const perro = nuevo("Kyra");
+	perro.position.y = ALTURA_TIERRA;
+	giratorio.add(perro);
+	let mezclador = null;
+	if (modelos.clips.length > 0) {
+		mezclador = new THREE.AnimationMixer(perro);
+		const quieta = modelos.clips.find((k) => k.name === "quieta");
+		const celebrar = modelos.clips.find((k) => k.name === "celebrar");
+		const reposo = quieta ? mezclador.clipAction(quieta).play() : null;
+		// De vez en cuando salta de alegría y vuelve a la pose de reposo.
+		if (celebrar && reposo) {
+			const salto = mezclador.clipAction(celebrar);
+			salto.setLoop(THREE.LoopOnce, 1);
+			mezclador.addEventListener("finished", () => {
+				salto.fadeOut(0.3);
+				reposo.reset().fadeIn(0.3).play();
+			});
+			perro.userData.saltar = () => {
+				reposo.fadeOut(0.2);
+				salto.reset().fadeIn(0.2).play();
+			};
+		}
+	}
+	const ajustar = () => {
+		const w = elemento.clientWidth, h = elemento.clientHeight;
+		if (!w || !h) return;
+		r.setSize(w, h, false);
+		c.aspect = w / h;
+		c.updateProjectionMatrix();
+	};
+	const observador = new ResizeObserver(ajustar);
+	observador.observe(elemento);
+	ajustar();
+	const t = new THREE.Timer();
+	let proximoSalto = 2.5;
+	r.setAnimationLoop(() => {
+		t.update();
+		const dt = Math.min(0.1, t.getDelta());
+		giratorio.rotation.y += dt * 0.5;
+		if (mezclador) mezclador.update(dt);
+		if (t.getElapsed() > proximoSalto && perro.userData.saltar) {
+			perro.userData.saltar();
+			proximoSalto += 5;
+		}
+		r.render(e, c);
+	});
+	return {
+		cerrar() {
+			r.setAnimationLoop(null);
+			observador.disconnect();
+			r.dispose();
+			r.domElement.remove();
+		},
+	};
+}
+
 // depurar sirve para revisar la escena desde la consola del navegador.
-const depurar = () => ({ THREE, escena, camara, controles, kyra, tablero });
-window.Huerto3D = { montar, dibujar, final, reencuadrar, ambiente, depurar };
+const depurar = () => ({ THREE, escena, camara, controles, kyra, tablero, cuadro });
+window.Huerto3D = { montar, dibujar, final, reencuadrar, ambiente, presentar, cambiarSeguir, titulo, depurar };
 window.dispatchEvent(new Event("huerto3d-listo"));
