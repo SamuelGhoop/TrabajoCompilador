@@ -394,19 +394,20 @@ html, body {
 #nivVista { white-space: pre-wrap; }
 #gutter .now { color: #000; background: var(--phos); }
 /* En el juego, una barra de luz marca la línea del comando que hace Kyra; con
-   cada comando destella, al mismo tiempo que las luces de Kyra en 3D. */
+   cada comando destella, al mismo tiempo que las luces de Kyra en 3D. Es fuerte
+   a propósito: con un proyector, un verde más tenue no se ve. */
 #lineaViva {
   position: absolute; left: 0; right: 0; height: 1.4em; z-index: 0;
-  background: rgba(60,255,122,.10);
-  border-left: 3px solid var(--phos);
-  box-shadow: 0 0 14px rgba(60,255,122,.35), inset 0 0 18px rgba(60,255,122,.12);
+  background: rgba(60,255,122,.30);
+  border-left: 6px solid var(--phos);
+  box-shadow: 0 0 18px rgba(60,255,122,.55), inset 0 0 0 1px rgba(60,255,122,.6);
   pointer-events: none;
   transition: top 90ms steps(2, end);
 }
 #lineaViva.pulso { animation: lineaPulso 420ms ease-out 1; }
 @keyframes lineaPulso {
-  0%   { background: rgba(60,255,122,.45); box-shadow: 0 0 30px rgba(60,255,122,.9), inset 0 0 24px rgba(60,255,122,.5); }
-  100% { background: rgba(60,255,122,.10); box-shadow: 0 0 14px rgba(60,255,122,.35), inset 0 0 18px rgba(60,255,122,.12); }
+  0%   { background: rgba(60,255,122,.55); box-shadow: 0 0 30px rgba(60,255,122,.9), inset 0 0 0 1px rgba(60,255,122,.9); }
+  100% { background: rgba(60,255,122,.30); box-shadow: 0 0 18px rgba(60,255,122,.55), inset 0 0 0 1px rgba(60,255,122,.6); }
 }
 #editor { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) { #lineaViva.pulso { animation: none; } }
